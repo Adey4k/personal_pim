@@ -1,16 +1,10 @@
-# personal_pim
-
-«Кваліфікаційна робота на підтвердження ступеня фахового молодшого бакалавра (ВСП «ППФК НТУ «ХПІ») Ладікова Максима, 45 група
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+# Розробка PIM-системи «Розумна телефонна книга»
+Кваліфікаційна робота на підтвердження ступеня фахового молодшого
+бакалавра ([ВСП «ППФК НТУ «ХПІ»](http://polytechnic.poltava.ua)).
+Виконавець - **Ладіков Максим Юрійович**
+Керівник роботи – **Бабич Олександр Вікторович**
+## Завдання до дипломної роботи
+Продукт має являти собою систему для керування персональною інформацією – «розумну» телефонну книгу, яка за допомогою ШІ (використати Gemini API) аналізує повідомлення, отримані користувачем, і автоматично створює картки контактів, видобуваючи з них ім’я, телефон, пошту та інші поля. Слід передбачити інші функції, стандартні для систем такого виду, а також можливість ручного вводу даних, зручний і привабливий інтерфейс користувача, можливості з експорту та імпорту даних тощо.
+## Використані технології
+* Flutter
+## Опублікований продукт
