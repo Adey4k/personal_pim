@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+
 import 'app_drawer.dart';
+// Импортируем наш новый экран добавления контакта
+import 'add_contact_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,7 +18,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Мої контакти'), // Изменили заголовок
     );
   }
 }
@@ -29,13 +32,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 1;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
+  // Мы удалили переменную _counter и метод _incrementCounter,
+  // так как они нам больше не нужны!
 
   @override
   Widget build(BuildContext context) {
@@ -44,23 +42,23 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      // Вот здесь мы вызываем наше меню из отдельного файла!
       drawer: const AppDrawer(),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+      body: const Center(
+        // Вместо колонки со счетчиком мы пока выводим простую надпись
+        child: Text(
+          'Список контактів порожній',
+          style: TextStyle(fontSize: 18),
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
+        onPressed: () {
+          // Теперь при нажатии мы переходим на экран AddContactPage
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddContactPage()),
+          );
+        },
+        tooltip: 'Додати контакт',
         child: const Icon(Icons.add),
       ),
     );
