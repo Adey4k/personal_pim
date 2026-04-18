@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-// НОВЫЙ ИМПОРТ: нужен для настройки кэша Firestore
+import 'package:firebase_auth/firebase_auth.dart';
+import 'login_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 
@@ -35,7 +36,25 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
       ),
-      home: const MyHomePage(title: 'Мої контакти'),
+      // Убираем жесткую привязку к MyHomePage и добавляем StreamBuilder
+      home: StreamBuilder<User?>(
+        // Слушаем изменения состояния авторизации в реальном времени
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          // Если данные еще проверяются
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          }
+
+          // Если пользователь ЕСТЬ (авторизован)
+          if (snapshot.hasData) {
+            return const MyHomePage(title: 'Мої контакти');
+          }
+
+          // Если пользователя НЕТ (не авторизован или вышел)
+          return const LoginPage();
+        },
+      ),
     );
   }
 }

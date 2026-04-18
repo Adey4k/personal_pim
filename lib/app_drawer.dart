@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 // Импортируем наши новые экраны, чтобы к ним можно было перейти
 import 'settings_page.dart';
 import 'profile_page.dart';
+import 'auth_service.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -44,6 +45,16 @@ class AppDrawer extends StatelessWidget {
                 context,
                 MaterialPageRoute(builder: (context) => const ProfilePage()),
               );
+            },
+          ),
+          const Divider(), // Визуальная линия-разделитель
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text('Вийти', style: TextStyle(color: Colors.red)),
+            onTap: () async {
+              Navigator.pop(context); // Закрываем меню
+              final authService = AuthService();
+              await authService.signOut();
             },
           ),
         ],
