@@ -1,24 +1,23 @@
 class Contact {
-  String? id; // ID в базі даних (може бути null, поки не зберегли)
-  final String name;
-  final String phone;
+  String? id;
+  // Тепер ми зберігаємо всі поля тут (наприклад: {"Ім'я": "Максим", "Instagram": "@max"})
+  Map<String, dynamic> fields;
 
-  Contact({this.id, required this.name, required this.phone});
+  Contact({this.id, required this.fields});
 
-  //Перетворюємо об'єкт в формат, який розуміє Firebase (Словник/Map)
+  // Залишимо швидкий доступ до імені (щоб малювати першу літеру на аватарках)
+  String get name => fields["Ім'я"]?.toString() ?? 'Без імені';
+
+  // Перетворюємо об'єкт у формат для Firebase (просто віддаємо мапу!)
   Map<String, dynamic> toMap() {
-    return {
-      'name': name,
-      'phone': phone,
-    };
+    return fields;
   }
 
-  //Створюємо об'єкт контакта з даних, що прийшли з Firebase
+  // Створюємо об'єкт з даних, які прийшли від Firebase
   factory Contact.fromMap(Map<String, dynamic> map, String documentId) {
     return Contact(
       id: documentId,
-      name: map['name'] ?? '',
-      phone: map['phone'] ?? '',
+      fields: map,
     );
   }
 }

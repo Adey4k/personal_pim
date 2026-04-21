@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'login_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 
 import 'app_drawer.dart';
 import 'add_contact_page.dart';
 import 'firestore_service.dart';
 import 'contact_model.dart';
+import 'login_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,10 +17,9 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // === ЯВНО ВКЛЮЧАЕМ И НАСТРАИВАЕМ ОФЛАЙН КЭШ ===
   FirebaseFirestore.instance.settings = const Settings(
-    persistenceEnabled: true, // Принудительно включаем кэш на диске
-    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED, // Не ограничиваем размер кэша
+    persistenceEnabled: true,
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
 
   runApp(const MyApp());
@@ -36,22 +35,15 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
       ),
-      // Убираем жесткую привязку к MyHomePage и добавляем StreamBuilder
       home: StreamBuilder<User?>(
-        // Слушаем изменения состояния авторизации в реальном времени
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
-          // Если данные еще проверяются
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(body: Center(child: CircularProgressIndicator()));
           }
-
-          // Если пользователь ЕСТЬ (авторизован)
           if (snapshot.hasData) {
             return const MyHomePage(title: 'Мої контакти');
           }
-
-          // Если пользователя НЕТ (не авторизован или вышел)
           return const LoginPage();
         },
       ),
@@ -70,81 +62,203 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final FirestoreService _dbService = FirestoreService();
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      drawer: const AppDrawer(),
-      body: StreamBuilder<List<Contact>>(
-        stream: _dbService.getContactsStream(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+  // Список колонок, які зараз відображаються
+  List<String> _columns = ["Ім'я", "Телефон"];
 
-          // === ТЕПЕРЬ МЫ ВЫВОДИМ РЕАЛЬНУЮ ПРИЧИНУ ОШИБКИ НА ЭКРАН ===
-          if (snapshot.hasError) {
-            print('Firebase Error: ${snapshot.error}'); // Пишем в консоль
-            return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    'Помилка: ${snapshot.error}',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                )
-            );
-          }
+  // "Пам'ять" таблиці. Зберігає всі ключі, які таблиця вже колись бачила.
+  // Це потрібно, щоб якщо ти сховаєш колонку, вона не додалась назад автоматично.
+  final Set<String> _knownKeys = {"Ім'я", "Телефон"};
 
-          final contacts = snapshot.data ?? [];
+  Set<String> _getAllAvailableKeys(List<Contact> contacts) {
+    Set<String> keys = {};
+    for (var contact in contacts) {
+      keys.addAll(contact.fields.keys);
+    }
+    return keys;
+  }
 
-          if (contacts.isEmpty) {
-            return const Center(
-              child: Text(
-                'Список контактів порожній',
-                style: TextStyle(fontSize: 18),
-              ),
-            );
-          }
+  void _showColumnSettings(Set<String> allKeys) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+            builder: (context, setModalState) {
+              List<String> unselectedKeys = allKeys.difference(_columns.toSet()).toList();
 
-          return ListView.builder(
-            itemCount: contacts.length,
-            itemBuilder: (context, index) {
-              final contact = contacts[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    child: Text(
-                      contact.name.isNotEmpty ? contact.name[0].toUpperCase() : '?',
-                      style: const TextStyle(color: Colors.white),
+              return Container(
+                height: MediaQuery.of(context).size.height * 0.7,
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Налаштування таблиці', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    const Text('Тягніть, щоб змінити порядок. Натисніть ❌, щоб сховати колонку.'),
+                    const SizedBox(height: 16),
+
+                    Expanded(
+                      child: ReorderableListView(
+                        onReorder: (oldIndex, newIndex) {
+                          setModalState(() {
+                            if (newIndex > oldIndex) newIndex -= 1;
+                            final String item = _columns.removeAt(oldIndex);
+                            _columns.insert(newIndex, item);
+                          });
+                          setState(() {});
+                        },
+                        children: [
+                          for (int index = 0; index < _columns.length; index += 1)
+                            ListTile(
+                              key: ValueKey(_columns[index]),
+                              title: Text(_columns[index]),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.close, color: Colors.red),
+                                    onPressed: () {
+                                      setModalState(() {
+                                        _columns.removeAt(index);
+                                      });
+                                      setState(() {});
+                                    },
+                                  ),
+                                  const Icon(Icons.drag_handle),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                  title: Text(
-                      contact.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold)
-                  ),
-                  subtitle: Text(contact.phone),
+                    const Divider(height: 32, thickness: 2),
+
+                    const Text('Доступні поля для додавання:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: unselectedKeys.map((key) {
+                        return ActionChip(
+                          label: Text('+ $key'),
+                          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                          onPressed: () {
+                            setModalState(() {
+                              _columns.add(key);
+                            });
+                            setState(() {});
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    if (unselectedKeys.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8.0),
+                        child: Text('Всі існуючі поля вже в таблиці', style: TextStyle(color: Colors.grey)),
+                      ),
+                  ],
                 ),
               );
+            }
+        );
+      },
+    );
+  }
+
+  DataCell _buildCell(Contact contact, String columnName) {
+    final value = contact.fields[columnName]?.toString() ?? '';
+    return DataCell(
+        Text(
+          value,
+          style: columnName == "Ім'я" ? const TextStyle(fontWeight: FontWeight.bold) : null,
+        )
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<Contact>>(
+      stream: _dbService.getContactsStream(),
+      builder: (context, snapshot) {
+        final contacts = snapshot.data ?? [];
+        final allKeys = _getAllAvailableKeys(contacts);
+
+        // === МАГІЯ АВТОДОДАВАННЯ ===
+        // Якщо в базі з'явилося нове поле, якого ми ще не бачили,
+        // додаємо його в пам'ять таблиці і відразу виводимо як колонку!
+        for (String key in allKeys) {
+          if (!_knownKeys.contains(key)) {
+            _knownKeys.add(key); // Запам'ятали
+            _columns.add(key);   // Показали
+          }
+        }
+
+        return Scaffold(
+          appBar: AppBar(
+            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+            title: Text(widget.title),
+            actions: [
+              if (snapshot.hasData && contacts.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.view_column),
+                  tooltip: 'Налаштувати колонки',
+                  onPressed: () => _showColumnSettings(allKeys),
+                ),
+            ],
+          ),
+          drawer: const AppDrawer(),
+          body: _buildBody(snapshot, contacts),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AddContactPage()),
+              );
             },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AddContactPage()),
-          );
-        },
-        tooltip: 'Додати контакт',
-        child: const Icon(Icons.add),
+            tooltip: 'Додати контакт',
+            child: const Icon(Icons.add),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBody(AsyncSnapshot<List<Contact>> snapshot, List<Contact> contacts) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (snapshot.hasError) {
+      return Center(child: Text('Помилка: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+    }
+
+    if (contacts.isEmpty) {
+      return const Center(child: Text('Список контактів порожній', style: TextStyle(fontSize: 18)));
+    }
+
+    if (_columns.isEmpty) {
+      return const Center(
+          child: Text(
+              'Виберіть хоча б одну колонку в налаштуваннях',
+              style: TextStyle(fontSize: 16, color: Colors.grey)
+          )
+      );
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.vertical,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columns: _columns.map((colName) => DataColumn(
+            label: Text(colName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          )).toList(),
+          rows: contacts.map((contact) {
+            return DataRow(
+              cells: _columns.map((colName) => _buildCell(contact, colName)).toList(),
+            );
+          }).toList(),
+        ),
       ),
     );
   }

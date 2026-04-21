@@ -15,8 +15,7 @@ class AuthService {
       );
 
       // 2. Вызываем окно входа (теперь метод называется authenticate)
-      final GoogleSignInAccount? googleUser = await _googleSignIn.authenticate();
-      if (googleUser == null) return null; // Пользователь закрыл окно
+      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate(); // Пользователь закрыл окно
 
       // 3. Получаем ключи (в 7.x версии это происходит мгновенно, БЕЗ await)
       final GoogleSignInAuthentication googleAuth = googleUser.authentication;
