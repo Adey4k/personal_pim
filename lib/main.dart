@@ -212,7 +212,11 @@ class _MyHomePageState extends State<MyHomePage> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const AddContactPage()),
+                MaterialPageRoute(
+                    builder: (context) => AddContactPage(
+                      existingFields: _knownKeys, // ПЕРЕДАЄМО НАШІ ЗІБРАНІ ПОЛЯ!
+                    )
+                ),
               );
             },
             tooltip: 'Додати контакт',
