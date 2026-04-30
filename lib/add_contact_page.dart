@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // ДОДАНО: Для копіювання в буфер обміну
+import 'package:flutter/services.dart';
 import 'contact_model.dart';
 import 'firestore_service.dart';
 
+// Визначаємо доступні типи даних для полів
+enum FieldType { text, number, date, boolean }
+
+// Управління станом динамічних полів форми
 class DynamicField {
   final TextEditingController keyController;
   final TextEditingController valueController;
+  FieldType type;
 
-  DynamicField({required String key, required String value})
+  DynamicField({required String key, required String value, this.type = FieldType.text})
       : keyController = TextEditingController(text: key),
         valueController = TextEditingController(text: value);
 
@@ -17,6 +22,7 @@ class DynamicField {
   }
 }
 
+// Екран створення нового контакту з підтримкою кастомних полів
 class AddContactPage extends StatefulWidget {
   final Set<String> existingFields;
 
@@ -43,17 +49,138 @@ class _AddContactPageState extends State<AddContactPage> {
     }
   }
 
-  void _addField() {
-    setState(() {
-      _fields.add(DynamicField(key: "Нова властивість", value: ""));
-    });
-    // Автоматично відкриваємо вікно перейменування для щойно створеного поля
-    _renameField(_fields.length - 1);
+  // Комплексний діалог для додавання нової властивості (Назва + Тип)
+  void _showAddFieldDialog() {
+    TextEditingController newNameController = TextEditingController();
+    FieldType selectedType = FieldType.text; // Тип за замовчуванням
+
+    showDialog(
+        context: context,
+        builder: (context) {
+          // Використовуємо StatefulBuilder, щоб оновлювати стан випадаючого списку всередині діалогу
+          return StatefulBuilder(
+              builder: (context, setDialogState) {
+                return AlertDialog(
+                  title: const Text('Нова властивість'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextField(
+                        controller: newNameController,
+                        autofocus: true,
+                        decoration: const InputDecoration(
+                          hintText: 'Назва',
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text('Тип даних:', style: TextStyle(color: Colors.grey)),
+                      const SizedBox(height: 8),
+                      DropdownButton<FieldType>(
+                        value: selectedType,
+                        isExpanded: true,
+                        items: const [
+                          DropdownMenuItem(value: FieldType.text, child: Text('Текст')),
+                          DropdownMenuItem(value: FieldType.number, child: Text('Число/Телефон')),
+                          DropdownMenuItem(value: FieldType.date, child: Text('Дата')),
+                          DropdownMenuItem(value: FieldType.boolean, child: Text('Логічне (Так/Ні)')),
+                        ],
+                        onChanged: (FieldType? newValue) {
+                          if (newValue != null) {
+                            setDialogState(() {
+                              selectedType = newValue;
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Скасувати'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        final name = newNameController.text.trim();
+                        if (name.isNotEmpty) {
+                          setState(() {
+                            // Створюємо поле одразу з обраним типом
+                            _fields.add(DynamicField(
+                                key: name,
+                                value: "",
+                                type: selectedType
+                            ));
+                          });
+                          Navigator.pop(context);
+                        }
+                      },
+                      child: const Text('Додати'),
+                    ),
+                  ],
+                );
+              }
+          );
+        }
+    );
   }
 
-  // === НОВЕ: Нижня шторка з опціями поля ===
+  // Обробка зміни типу існуючого поля
+  void _changeFieldType(int index) {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Оберіть тип властивості'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.text_fields),
+                  title: const Text('Текст'),
+                  onTap: () {
+                    setState(() => _fields[index].type = FieldType.text);
+                    Navigator.pop(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.numbers),
+                  title: const Text('Число/Телефон'),
+                  onTap: () {
+                    setState(() => _fields[index].type = FieldType.number);
+                    Navigator.pop(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.calendar_today),
+                  title: const Text('Дата'),
+                  onTap: () {
+                    setState(() => _fields[index].type = FieldType.date);
+                    Navigator.pop(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.check_box),
+                  title: const Text('Логічне (Так/Ні)'),
+                  onTap: () {
+                    setState(() {
+                      _fields[index].type = FieldType.boolean;
+                      if (_fields[index].valueController.text.isEmpty) {
+                        _fields[index].valueController.text = "false";
+                      }
+                    });
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ),
+          );
+        }
+    );
+  }
+
+  // Виклик меню опцій для конкретного поля
   void _showFieldOptions(int index) {
-    // Ховаємо клавіатуру, якщо вона була відкрита
     FocusScope.of(context).unfocus();
 
     showModalBottomSheet(
@@ -64,11 +191,19 @@ class _AddContactPageState extends State<AddContactPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 ListTile(
+                  leading: const Icon(Icons.settings),
+                  title: const Text('Змінити тип поля'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _changeFieldType(index);
+                  },
+                ),
+                ListTile(
                   leading: const Icon(Icons.edit),
                   title: const Text('Перейменувати'),
                   onTap: () {
-                    Navigator.pop(context); // Закриваємо меню
-                    _renameField(index);    // Відкриваємо вікно зміни назви
+                    Navigator.pop(context);
+                    _renameField(index);
                   },
                 ),
                 ListTile(
@@ -76,7 +211,6 @@ class _AddContactPageState extends State<AddContactPage> {
                   title: const Text('Скопіювати значення'),
                   onTap: () {
                     Navigator.pop(context);
-                    // Копіюємо значення в буфер обміну
                     Clipboard.setData(ClipboardData(text: _fields[index].valueController.text));
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Значення скопійовано!')),
@@ -101,7 +235,7 @@ class _AddContactPageState extends State<AddContactPage> {
     );
   }
 
-  // === НОВЕ: Вікно для перейменування поля ===
+  // Зміна назви існуючого поля
   void _renameField(int index) {
     TextEditingController renameController = TextEditingController(text: _fields[index].keyController.text);
 
@@ -112,9 +246,9 @@ class _AddContactPageState extends State<AddContactPage> {
             title: const Text('Назва властивості'),
             content: TextField(
               controller: renameController,
-              autofocus: true, // Одразу відкриває клавіатуру
+              autofocus: true,
               decoration: const InputDecoration(
-                hintText: 'Введіть назву (напр. Telegram)',
+                hintText: 'Введіть назву',
               ),
             ),
             actions: [
@@ -137,6 +271,7 @@ class _AddContactPageState extends State<AddContactPage> {
     );
   }
 
+  // Збереження даних у Firestore
   void _saveContact() {
     final name = _nameController.text.trim();
 
@@ -166,6 +301,77 @@ class _AddContactPageState extends State<AddContactPage> {
     final newContact = Contact(fields: contactData);
     _dbService.addContact(newContact);
     Navigator.pop(context);
+  }
+
+  // Динамічна побудова віджетів вводу залежно від типу поля
+  Widget _buildDynamicInput(int index) {
+    final field = _fields[index];
+
+    switch (field.type) {
+      case FieldType.number:
+        return TextField(
+          controller: field.valueController,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(
+            hintText: '0',
+            hintStyle: TextStyle(color: Colors.grey),
+            border: InputBorder.none,
+            isDense: true,
+          ),
+        );
+
+      case FieldType.date:
+        return InkWell(
+          onTap: () async {
+            DateTime? picked = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime(1900),
+              lastDate: DateTime(2100),
+            );
+            if (picked != null) {
+              setState(() {
+                field.valueController.text = "${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}";
+              });
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12.0),
+            child: Text(
+              field.valueController.text.isEmpty ? 'Обрати дату' : field.valueController.text,
+              style: TextStyle(
+                color: field.valueController.text.isEmpty ? Colors.grey : Colors.black,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        );
+
+      case FieldType.boolean:
+        return Align(
+          alignment: Alignment.centerLeft,
+          child: Switch(
+            value: field.valueController.text == 'true',
+            onChanged: (bool val) {
+              setState(() {
+                field.valueController.text = val.toString();
+              });
+            },
+          ),
+        );
+
+      case FieldType.text:
+      default:
+        return TextField(
+          controller: field.valueController,
+          decoration: const InputDecoration(
+            hintText: 'Текст',
+            hintStyle: TextStyle(color: Colors.grey),
+            border: InputBorder.none,
+            isDense: true,
+          ),
+        );
+    }
   }
 
   @override
@@ -214,14 +420,13 @@ class _AddContactPageState extends State<AddContactPage> {
               itemCount: _fields.length,
               itemBuilder: (context, index) {
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0), // Трохи збільшив відступ для зручності
+                  padding: const EdgeInsets.only(bottom: 12.0),
                   child: Row(
                     children: [
-                      // === ОНОВЛЕНА КОЛОНКА КЛЮЧА ===
                       Expanded(
                         flex: 2,
                         child: InkWell(
-                          onTap: () => _showFieldOptions(index), // Виклик меню
+                          onTap: () => _showFieldOptions(index),
                           borderRadius: BorderRadius.circular(4),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 12.0),
@@ -235,7 +440,7 @@ class _AddContactPageState extends State<AddContactPage> {
                                         ? 'Властивість'
                                         : _fields[index].keyController.text,
                                     style: const TextStyle(
-                                      color: Colors.black, // Як ти і просив - жорстко чорний колір
+                                      color: Colors.black,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -248,18 +453,9 @@ class _AddContactPageState extends State<AddContactPage> {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      // Колонка значення
                       Expanded(
                         flex: 3,
-                        child: TextField(
-                          controller: _fields[index].valueController,
-                          decoration: const InputDecoration(
-                            hintText: 'Порожньо',
-                            hintStyle: TextStyle(color: Colors.grey),
-                            border: InputBorder.none,
-                            isDense: true,
-                          ),
-                        ),
+                        child: _buildDynamicInput(index),
                       ),
                     ],
                   ),
@@ -278,7 +474,8 @@ class _AddContactPageState extends State<AddContactPage> {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: _addField,
+                    // Оновлено: тепер викликається наш новий комплексний діалог
+                    onPressed: _showAddFieldDialog,
                     icon: const Icon(Icons.add),
                     label: const Text('Додати властивість'),
                   ),
@@ -289,7 +486,7 @@ class _AddContactPageState extends State<AddContactPage> {
                   child: ElevatedButton.icon(
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Тут буде магія ШІ! ✨')),
+                        const SnackBar(content: Text('В розробці')),
                       );
                     },
                     icon: const Icon(Icons.auto_awesome),

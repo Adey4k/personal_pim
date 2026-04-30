@@ -63,7 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final FirestoreService _dbService = FirestoreService();
 
   // Список колонок, які зараз відображаються
-  List<String> _columns = ["Ім'я", "Телефон"];
+  final List<String> _columns = ["Ім'я", "Телефон"];
 
   // "Пам'ять" таблиці. Зберігає всі ключі, які таблиця вже колись бачила.
   // Це потрібно, щоб якщо ти сховаєш колонку, вона не додалась назад автоматично.
