@@ -3,10 +3,8 @@ import 'package:flutter/services.dart';
 import 'contact_model.dart';
 import 'firestore_service.dart';
 
-// Визначаємо доступні типи даних для полів
 enum FieldType { text, number, date, boolean }
 
-// Управління станом динамічних полів форми
 class DynamicField {
   final TextEditingController keyController;
   final TextEditingController valueController;
@@ -22,17 +20,17 @@ class DynamicField {
   }
 }
 
-// Екран створення нового контакту з підтримкою кастомних полів
-class AddContactPage extends StatefulWidget {
+class ContactPage extends StatefulWidget {
   final Set<String> existingFields;
+  final Contact? contact;
 
-  const AddContactPage({super.key, required this.existingFields});
+  const ContactPage({super.key, required this.existingFields, this.contact});
 
   @override
-  State<AddContactPage> createState() => _AddContactPageState();
+  State<ContactPage> createState() => _ContactPageState();
 }
 
-class _AddContactPageState extends State<AddContactPage> {
+class _ContactPageState extends State<ContactPage> {
   final FirestoreService _dbService = FirestoreService();
   final TextEditingController _nameController = TextEditingController();
   final List<DynamicField> _fields = [];
@@ -40,24 +38,45 @@ class _AddContactPageState extends State<AddContactPage> {
   @override
   void initState() {
     super.initState();
-    Set<String> initialKeys = {"Телефон"};
-    initialKeys.addAll(widget.existingFields);
-    initialKeys.remove("Ім'я");
 
-    for (String key in initialKeys) {
-      _fields.add(DynamicField(key: key, value: ""));
+    if (widget.contact != null) {
+      _nameController.text = widget.contact!.name;
+
+      widget.contact!.fields.forEach((key, value) {
+        if (key != "Ім'я") {
+          String valStr = value.toString();
+          FieldType inferredType = FieldType.text;
+
+          // Логіка розпізнавання типів на основі регулярних виразів
+          if (valStr == 'true' || valStr == 'false') {
+            inferredType = FieldType.boolean;
+          } else if (RegExp(r'^\d{2}\.\d{2}\.\d{4}$').hasMatch(valStr)) {
+            inferredType = FieldType.date;
+          } else if (RegExp(r'^\+?[\d\s\-\(\)]+$').hasMatch(valStr) && valStr.trim().isNotEmpty) {
+            inferredType = FieldType.number;
+          }
+
+          _fields.add(DynamicField(key: key, value: valStr, type: inferredType));
+        }
+      });
+    } else {
+      Set<String> initialKeys = {"Телефон"};
+      initialKeys.addAll(widget.existingFields);
+      initialKeys.remove("Ім'я");
+
+      for (String key in initialKeys) {
+        _fields.add(DynamicField(key: key, value: ""));
+      }
     }
   }
 
-  // Комплексний діалог для додавання нової властивості (Назва + Тип)
   void _showAddFieldDialog() {
     TextEditingController newNameController = TextEditingController();
-    FieldType selectedType = FieldType.text; // Тип за замовчуванням
+    FieldType selectedType = FieldType.text;
 
     showDialog(
         context: context,
         builder: (context) {
-          // Використовуємо StatefulBuilder, щоб оновлювати стан випадаючого списку всередині діалогу
           return StatefulBuilder(
               builder: (context, setDialogState) {
                 return AlertDialog(
@@ -70,7 +89,7 @@ class _AddContactPageState extends State<AddContactPage> {
                         controller: newNameController,
                         autofocus: true,
                         decoration: const InputDecoration(
-                          hintText: 'Назва',
+                          hintText: 'Назва (напр. Telegram)',
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -105,7 +124,6 @@ class _AddContactPageState extends State<AddContactPage> {
                         final name = newNameController.text.trim();
                         if (name.isNotEmpty) {
                           setState(() {
-                            // Створюємо поле одразу з обраним типом
                             _fields.add(DynamicField(
                                 key: name,
                                 value: "",
@@ -125,7 +143,6 @@ class _AddContactPageState extends State<AddContactPage> {
     );
   }
 
-  // Обробка зміни типу існуючого поля
   void _changeFieldType(int index) {
     showDialog(
         context: context,
@@ -179,7 +196,6 @@ class _AddContactPageState extends State<AddContactPage> {
     );
   }
 
-  // Виклик меню опцій для конкретного поля
   void _showFieldOptions(int index) {
     FocusScope.of(context).unfocus();
 
@@ -235,7 +251,6 @@ class _AddContactPageState extends State<AddContactPage> {
     );
   }
 
-  // Зміна назви існуючого поля
   void _renameField(int index) {
     TextEditingController renameController = TextEditingController(text: _fields[index].keyController.text);
 
@@ -271,7 +286,6 @@ class _AddContactPageState extends State<AddContactPage> {
     );
   }
 
-  // Збереження даних у Firestore
   void _saveContact() {
     final name = _nameController.text.trim();
 
@@ -298,12 +312,17 @@ class _AddContactPageState extends State<AddContactPage> {
       }
     }
 
-    final newContact = Contact(fields: contactData);
-    _dbService.addContact(newContact);
+    final savedContact = Contact(id: widget.contact?.id, fields: contactData);
+
+    if (widget.contact == null) {
+      _dbService.addContact(savedContact);
+    } else {
+      _dbService.updateContact(savedContact);
+    }
+
     Navigator.pop(context);
   }
 
-  // Динамічна побудова віджетів вводу залежно від типу поля
   Widget _buildDynamicInput(int index) {
     final field = _fields[index];
 
@@ -474,7 +493,6 @@ class _AddContactPageState extends State<AddContactPage> {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    // Оновлено: тепер викликається наш новий комплексний діалог
                     onPressed: _showAddFieldDialog,
                     icon: const Icon(Icons.add),
                     label: const Text('Додати властивість'),

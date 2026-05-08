@@ -22,6 +22,14 @@ class FirestoreService {
     await collection.add(contact.toMap());
   }
 
+  // Оновлює існуючий документ у базі даних
+  Future<void> updateContact(Contact contact) async {
+    final collection = _getUserCollection();
+    if (collection == null || contact.id == null) return;
+
+    await collection.doc(contact.id).update(contact.toMap());
+  }
+
   // Метод для получения стрима контактов
   Stream<List<Contact>> getContactsStream() {
     final collection = _getUserCollection();

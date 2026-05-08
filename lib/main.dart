@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 
 import 'app_drawer.dart';
-import 'add_contact_page.dart';
+import 'contact_page.dart'; // Оновлений імпорт
 import 'firestore_service.dart';
 import 'contact_model.dart';
 import 'login_page.dart';
@@ -62,11 +62,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final FirestoreService _dbService = FirestoreService();
 
-  // Список колонок, які зараз відображаються
-  final List<String> _columns = ["Ім'я", "Телефон"];
-
-  // "Пам'ять" таблиці. Зберігає всі ключі, які таблиця вже колись бачила.
-  // Це потрібно, щоб якщо ти сховаєш колонку, вона не додалась назад автоматично.
+  List<String> _columns = ["Ім'я", "Телефон"];
   final Set<String> _knownKeys = {"Ім'я", "Телефон"};
 
   Set<String> _getAllAvailableKeys(List<Contact> contacts) {
@@ -183,13 +179,10 @@ class _MyHomePageState extends State<MyHomePage> {
         final contacts = snapshot.data ?? [];
         final allKeys = _getAllAvailableKeys(contacts);
 
-        // === МАГІЯ АВТОДОДАВАННЯ ===
-        // Якщо в базі з'явилося нове поле, якого ми ще не бачили,
-        // додаємо його в пам'ять таблиці і відразу виводимо як колонку!
         for (String key in allKeys) {
           if (!_knownKeys.contains(key)) {
-            _knownKeys.add(key); // Запам'ятали
-            _columns.add(key);   // Показали
+            _knownKeys.add(key);
+            _columns.add(key);
           }
         }
 
@@ -213,8 +206,8 @@ class _MyHomePageState extends State<MyHomePage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => AddContactPage(
-                      existingFields: _knownKeys, // ПЕРЕДАЄМО НАШІ ЗІБРАНІ ПОЛЯ!
+                    builder: (context) => ContactPage(
+                      existingFields: _knownKeys,
                     )
                 ),
               );
@@ -254,11 +247,24 @@ class _MyHomePageState extends State<MyHomePage> {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
+          showCheckboxColumn: false, // Вимикаємо чекбокси для клікабельних рядків
           columns: _columns.map((colName) => DataColumn(
             label: Text(colName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           )).toList(),
           rows: contacts.map((contact) {
             return DataRow(
+              // Обробник натискання на рядок
+              onSelectChanged: (selected) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => ContactPage(
+                        existingFields: _knownKeys,
+                        contact: contact, // Передаємо обраний контакт для редагування
+                      )
+                  ),
+                );
+              },
               cells: _columns.map((colName) => _buildCell(contact, colName)).toList(),
             );
           }).toList(),
