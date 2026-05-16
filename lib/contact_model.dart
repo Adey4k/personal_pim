@@ -1,32 +1,48 @@
+import 'package:flutter/material.dart';
+import 'app_constants.dart';
+
+enum FieldType { text, number, date, boolean }
+
+class DynamicField {
+  final TextEditingController keyController;
+  final TextEditingController valueController;
+  FieldType type;
+
+  DynamicField({required String key, required String value, this.type = FieldType.text})
+      : keyController = TextEditingController(text: key),
+        valueController = TextEditingController(text: value);
+
+  void dispose() {
+    keyController.dispose();
+    valueController.dispose();
+  }
+}
+
 class Contact {
   String? id;
   Map<String, dynamic> fields;
-  int orderIndex; // Нове поле для збереження порядку
+  int orderIndex;
 
   Contact({this.id, required this.fields, this.orderIndex = 0});
 
-  String get name => fields["Ім'я"]?.toString() ?? 'Без імені';
+  String get name => fields[AppKeys.name]?.toString() ?? 'Без імені';
 
   Map<String, dynamic> toMap() {
-    // Копіюємо всі поля і додаємо orderIndex для бази даних
     final map = Map<String, dynamic>.from(fields);
-    map['orderIndex'] = orderIndex;
+    map[AppKeys.orderIndex] = orderIndex;
     return map;
   }
 
   factory Contact.fromMap(Map<String, dynamic> map, String documentId) {
-    // Витягуємо orderIndex, якщо він є (для старих записів буде 0)
-    int orderIndex = map['orderIndex'] as int? ?? 0;
+    int orderIndex = map[AppKeys.orderIndex] as int? ?? 0;
 
-    // Створюємо копію полів, але видаляємо orderIndex,
-    // щоб він не відображався як звичайна властивість контакту
     final fieldsMap = Map<String, dynamic>.from(map);
-    fieldsMap.remove('orderIndex');
+    fieldsMap.remove(AppKeys.orderIndex);
 
     return Contact(
       id: documentId,
       fields: fieldsMap,
-      orderIndex: orderIndex, // Зберігаємо окремо
+      orderIndex: orderIndex,
     );
   }
 }

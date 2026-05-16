@@ -2,29 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'contact_model.dart';
 import 'firestore_service.dart';
-
-enum FieldType { text, number, date, boolean }
-
-class DynamicField {
-  final TextEditingController keyController;
-  final TextEditingController valueController;
-  FieldType type;
-
-  DynamicField({required String key, required String value, this.type = FieldType.text})
-      : keyController = TextEditingController(text: key),
-        valueController = TextEditingController(text: value);
-
-  void dispose() {
-    keyController.dispose();
-    valueController.dispose();
-  }
-}
+import 'app_constants.dart';
+import 'validators.dart';
 
 class ContactPage extends StatefulWidget {
   final Set<String> existingFields;
+  final Set<String> existingNames;
   final Contact? contact;
 
-  const ContactPage({super.key, required this.existingFields, this.contact});
+  const ContactPage({
+    super.key,
+    required this.existingFields,
+    required this.existingNames,
+    this.contact
+  });
 
   @override
   State<ContactPage> createState() => _ContactPageState();
@@ -45,26 +36,19 @@ class _ContactPageState extends State<ContactPage> {
       _nameController.text = widget.contact!.name;
     }
 
-    Set<String> allPossibleKeys = {"Телефон"};
+    Set<String> allPossibleKeys = {AppKeys.phone};
     allPossibleKeys.addAll(widget.existingFields);
     if (widget.contact != null) {
       allPossibleKeys.addAll(widget.contact!.fields.keys);
     }
-    allPossibleKeys.remove("Ім'я");
+    allPossibleKeys.remove(AppKeys.name);
 
     Map<String, dynamic> currentValues = widget.contact?.fields ?? {};
 
     for (String key in allPossibleKeys) {
       String valStr = currentValues[key]?.toString() ?? "";
-      FieldType inferredType = FieldType.text;
 
-      if (valStr.toLowerCase() == 'true' || valStr.toLowerCase() == 'false') {
-        inferredType = FieldType.boolean;
-      } else if (RegExp(r'^\d{2}\.\d{2}\.\d{4}$').hasMatch(valStr)) {
-        inferredType = FieldType.date;
-      } else if (RegExp(r'^\+?[\d\s\-\(\)]+$').hasMatch(valStr) && valStr.trim().isNotEmpty) {
-        inferredType = FieldType.number;
-      }
+      FieldType inferredType = Validators.inferType(valStr);
 
       _fields.add(DynamicField(key: key, value: valStr, type: inferredType));
     }
@@ -72,15 +56,10 @@ class _ContactPageState extends State<ContactPage> {
 
   IconData _getIconForType(FieldType type) {
     switch (type) {
-      case FieldType.number:
-        return Icons.numbers;
-      case FieldType.date:
-        return Icons.calendar_today;
-      case FieldType.boolean:
-        return Icons.check_box;
-      case FieldType.text:
-      default:
-        return Icons.text_fields;
+      case FieldType.number: return Icons.numbers;
+      case FieldType.date: return Icons.calendar_today;
+      case FieldType.boolean: return Icons.check_box;
+      case FieldType.text: default: return Icons.text_fields;
     }
   }
 
@@ -104,9 +83,7 @@ class _ContactPageState extends State<ContactPage> {
                         autofocus: true,
                         minLines: 1,
                         maxLines: 4,
-                        decoration: const InputDecoration(
-                          hintText: 'Назва (напр. Telegram)',
-                        ),
+                        decoration: const InputDecoration(hintText: 'Назва (напр. Telegram)'),
                       ),
                       const SizedBox(height: 16),
                       const Text('Тип даних:', style: TextStyle(color: Colors.grey)),
@@ -122,9 +99,7 @@ class _ContactPageState extends State<ContactPage> {
                         ],
                         onChanged: (FieldType? newValue) {
                           if (newValue != null) {
-                            setDialogState(() {
-                              selectedType = newValue;
-                            });
+                            setDialogState(() => selectedType = newValue);
                           }
                         },
                       ),
@@ -138,24 +113,17 @@ class _ContactPageState extends State<ContactPage> {
                     ElevatedButton(
                       onPressed: () {
                         final name = newNameController.text.trim();
-                        // Валідація: перевіряємо, чи введено назву
-                        if (name.isNotEmpty) {
+                        final error = Validators.validateFieldName(name);
+
+                        if (error == null) {
                           setState(() {
-                            _fields.add(DynamicField(
-                                key: name,
-                                value: "",
-                                type: selectedType
-                            ));
+                            _fields.add(DynamicField(key: name, value: "", type: selectedType));
                             _showEmptyFields = true;
                           });
                           Navigator.pop(context);
                         } else {
-                          // Показуємо повідомлення про помилку
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Помилка: Введіть назву властивості!'),
-                              backgroundColor: Colors.red,
-                            ),
+                            SnackBar(content: Text('Помилка: $error'), backgroundColor: Colors.red),
                           );
                         }
                       },
@@ -222,7 +190,6 @@ class _ContactPageState extends State<ContactPage> {
     );
   }
 
-  // Нова функція для підтвердження видалення
   void _confirmDeleteField(int index) {
     final fieldName = _fields[index].keyController.text.isEmpty
         ? 'Властивість'
@@ -236,7 +203,7 @@ class _ContactPageState extends State<ContactPage> {
             content: Text('Ви впевнені, що хочете видалити поле "$fieldName" для усіх контактів?\nЦю дію неможливо скасувати.'),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context), // Просто закриваємо діалог
+                onPressed: () => Navigator.pop(context),
                 child: const Text('Скасувати'),
               ),
               ElevatedButton(
@@ -245,16 +212,16 @@ class _ContactPageState extends State<ContactPage> {
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () {
-                  Navigator.pop(context); // Закриваємо діалог
+                  Navigator.pop(context);
                   setState(() {
                     _fields[index].dispose();
-                    _fields.removeAt(index); // Видаляємо поле
+                    _fields.removeAt(index);
                   });
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Поле видалено')),
                   );
                 },
-                child: const Text('Видалити'),
+                child: const Text('Вилити'),
               ),
             ],
           );
@@ -303,8 +270,8 @@ class _ContactPageState extends State<ContactPage> {
                   leading: const Icon(Icons.delete, color: Colors.red),
                   title: const Text('Видалити', style: TextStyle(color: Colors.red)),
                   onTap: () {
-                    Navigator.pop(context); // Закриваємо нижнє меню
-                    _confirmDeleteField(index); // Викликаємо діалог підтвердження
+                    Navigator.pop(context);
+                    _confirmDeleteField(index);
                   },
                 ),
               ],
@@ -327,9 +294,7 @@ class _ContactPageState extends State<ContactPage> {
               autofocus: true,
               minLines: 1,
               maxLines: 4,
-              decoration: const InputDecoration(
-                hintText: 'Введіть назву',
-              ),
+              decoration: const InputDecoration(hintText: 'Введіть назву'),
             ),
             actions: [
               TextButton(
@@ -354,18 +319,17 @@ class _ContactPageState extends State<ContactPage> {
   void _saveContact() {
     final name = _nameController.text.trim();
 
-    if (name.isEmpty) {
+    // ВИКОРИСТОВУЄМО НАШ НОВИЙ ВАЛИДАТОР С ПРОВЕРКОЙ НА УНИКАЛЬНОСТЬ
+    final nameError = Validators.validateContactName(name, widget.existingNames, widget.contact?.name);
+    if (nameError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Помилка: Введіть ім'я контакту!"),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Помилка: $nameError'), backgroundColor: Colors.red),
       );
       return;
     }
 
     Map<String, dynamic> contactData = {
-      "Ім'я": name,
+      AppKeys.name: name,
     };
 
     for (var field in _fields) {
@@ -404,7 +368,6 @@ class _ContactPageState extends State<ContactPage> {
             contentPadding: EdgeInsets.symmetric(vertical: 8.0),
           ),
         );
-
       case FieldType.date:
         return InkWell(
           onTap: () async {
@@ -431,7 +394,6 @@ class _ContactPageState extends State<ContactPage> {
             ),
           ),
         );
-
       case FieldType.boolean:
         return Align(
           alignment: Alignment.centerLeft,
@@ -447,7 +409,6 @@ class _ContactPageState extends State<ContactPage> {
             ),
           ),
         );
-
       case FieldType.text:
       default:
         return TextField(
@@ -500,10 +461,10 @@ class _ContactPageState extends State<ContactPage> {
               minLines: 1,
               maxLines: 4,
               style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
-              decoration: const InputDecoration(
-                  hintText: "Ім'я",
+              decoration: InputDecoration(
+                  hintText: AppKeys.name,
                   border: InputBorder.none,
-                  hintStyle: TextStyle(color: Colors.grey)
+                  hintStyle: const TextStyle(color: Colors.grey)
               ),
             ),
           ),

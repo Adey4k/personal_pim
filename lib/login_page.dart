@@ -16,8 +16,6 @@ class LoginPage extends StatelessWidget {
           onPressed: () async {
             final authService = AuthService();
             await authService.signInWithGoogle();
-            // Нам не нужно делать Navigator.push, потому что
-            // main.dart сам увидит, что мы вошли, и перерисует экран.
           },
           icon: const Icon(Icons.login),
           label: const Text('Увійти через Google', style: TextStyle(fontSize: 18)),

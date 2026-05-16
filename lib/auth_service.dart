@@ -3,24 +3,34 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
+  static final AuthService _instance = AuthService._internal();
+
+  // Фабричний конструктор
+  factory AuthService() {
+    return _instance;
+  }
+  AuthService._internal();
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  // Используем .instance, как того требуют новые правила
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+
+  static const String _googleClientId = String.fromEnvironment('GOOGLE_CLIENT_ID');
 
   Future<UserCredential?> signInWithGoogle() async {
     try {
-      // 1. Инициализируем настройки с твоим Web Client ID
+      if (_googleClientId.isEmpty) {
+        throw Exception(
+            "GOOGLE_CLIENT_ID не знайдено."
+        );
+      }
+
       await _googleSignIn.initialize(
-        serverClientId: '151482638658-bmvchcm2g58vrpup12crqmlhrcdstq04.apps.googleusercontent.com',
+        serverClientId: _googleClientId,
       );
 
-      // 2. Вызываем окно входа (теперь метод называется authenticate)
-      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate(); // Пользователь закрыл окно
-
-      // 3. Получаем ключи (в 7.x версии это происходит мгновенно, БЕЗ await)
+      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
       final GoogleSignInAuthentication googleAuth = googleUser.authentication;
 
-      // 4. Передаем idToken в Firebase (accessToken разработчики удалили)
       final OAuthCredential credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,
       );
