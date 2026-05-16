@@ -40,17 +40,29 @@ class FirestoreService {
     await collection.doc(contact.id).update(contact.toMap());
   }
 
-  Future<void> updateContactsOrder(List<Contact> contacts) async {
+  Future<void> updateContactsOrder(List<Contact> contacts, int oldIndex, int newIndex) async {
     final collection = _getUserCollection();
     if (collection == null) return;
 
     final batch = FirebaseFirestore.instance.batch();
-    for (int i = 0; i < contacts.length; i++) {
+
+    // Определяем диапазон реально изменившихся элементов
+    final startIndex = oldIndex < newIndex ? oldIndex : newIndex;
+    final endIndex = oldIndex > newIndex ? oldIndex : newIndex;
+
+    for (int i = startIndex; i <= endIndex; i++) {
       if (contacts[i].id != null) {
         batch.update(collection.doc(contacts[i].id!), {AppKeys.orderIndex: i});
       }
     }
     await batch.commit();
+  }
+
+  Future<void> deleteContact(String contactId) async {
+    final collection = _getUserCollection();
+    if (collection == null) return;
+
+    await collection.doc(contactId).delete();
   }
 
   Stream<List<Contact>> getContactsStream() {

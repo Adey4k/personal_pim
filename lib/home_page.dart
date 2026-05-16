@@ -19,6 +19,7 @@ class _HomePageState extends State<HomePage> {
   final List<String> _columns = [AppKeys.name, AppKeys.phone];
   final Set<String> _knownKeys = {AppKeys.name, AppKeys.phone};
 
+  final Map<String, double> _columnWidthCache = {};
   late Stream<List<Contact>> _contactsStream;
 
   final TextPainter _textPainter = TextPainter(
@@ -38,6 +39,60 @@ class _HomePageState extends State<HomePage> {
       keys.addAll(contact.fields.keys);
     }
     return keys;
+  }
+
+  void _updateKnownKeysIfNeeded(Set<String> allKeys) {
+    bool hasChanges = false;
+    for (String key in allKeys) {
+      if (!_knownKeys.contains(key)) {
+        _knownKeys.add(key);
+        _columns.add(key);
+        hasChanges = true;
+      }
+    }
+    if (hasChanges) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  double _calculateColumnWidth(String columnName, List<Contact> contacts) {
+    if (_columnWidthCache.containsKey(columnName)) {
+      return _columnWidthCache[columnName]!;
+    }
+
+    double maxWidth = 0.0;
+    const textStyle = TextStyle(fontSize: 14);
+    const headerStyle = TextStyle(fontWeight: FontWeight.bold, fontSize: 16);
+
+    _textPainter.text = TextSpan(text: columnName, style: headerStyle);
+    _textPainter.layout();
+    maxWidth = _textPainter.size.width;
+
+    final contactsToCheck = contacts.take(40);
+
+    for (var contact in contactsToCheck) {
+      final value = contact.fields[columnName]?.toString() ?? '';
+      final isName = columnName == AppKeys.name;
+
+      _textPainter.text = TextSpan(text: value, style: isName ? headerStyle : textStyle);
+      _textPainter.layout();
+
+      if (_textPainter.size.width > maxWidth) {
+        maxWidth = _textPainter.size.width;
+      }
+    }
+
+    maxWidth += 36.0;
+    final finalWidth = maxWidth > 150.0 ? 150.0 : maxWidth;
+
+    _columnWidthCache[columnName] = finalWidth;
+    return finalWidth;
+  }
+
+  void _invalidateCache() {
+    _columnWidthCache.clear();
   }
 
   void _showColumnSettings(Set<String> allKeys) {
@@ -128,33 +183,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  double _calculateColumnWidth(String columnName, List<Contact> contacts) {
-    double maxWidth = 0.0;
-    const textStyle = TextStyle(fontSize: 14);
-    const headerStyle = TextStyle(fontWeight: FontWeight.bold, fontSize: 16);
-
-    _textPainter.text = TextSpan(text: columnName, style: headerStyle);
-    _textPainter.layout();
-    maxWidth = _textPainter.size.width;
-
-    final contactsToCheck = contacts.take(40);
-
-    for (var contact in contactsToCheck) {
-      final value = contact.fields[columnName]?.toString() ?? '';
-      final isName = columnName == AppKeys.name;
-
-      _textPainter.text = TextSpan(text: value, style: isName ? headerStyle : textStyle);
-      _textPainter.layout();
-
-      if (_textPainter.size.width > maxWidth) {
-        maxWidth = _textPainter.size.width;
-      }
-    }
-
-    maxWidth += 36.0;
-    return maxWidth > 150.0 ? 150.0 : maxWidth;
-  }
-
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<Contact>>(
@@ -162,15 +190,9 @@ class _HomePageState extends State<HomePage> {
       builder: (context, snapshot) {
         final contacts = snapshot.data ?? [];
         final allKeys = _getAllAvailableKeys(contacts);
-
         final existingNames = contacts.map((c) => c.name).toSet();
 
-        for (String key in allKeys) {
-          if (!_knownKeys.contains(key)) {
-            _knownKeys.add(key);
-            _columns.add(key);
-          }
-        }
+        _updateKnownKeysIfNeeded(allKeys);
 
         return Scaffold(
           appBar: AppBar(
@@ -188,9 +210,8 @@ class _HomePageState extends State<HomePage> {
           drawer: const AppDrawer(),
           body: _buildBody(snapshot, contacts, existingNames),
           floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              // ВИПРАВЛЕНО: Передаємо existingNames при створенні НОВОГО контакту
-              Navigator.push(
+            onPressed: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                     builder: (context) => ContactPage(
@@ -199,6 +220,8 @@ class _HomePageState extends State<HomePage> {
                     )
                 ),
               );
+              _invalidateCache();
+              setState((){});
             },
             tooltip: 'Додати контакт',
             child: const Icon(Icons.add),
@@ -266,21 +289,20 @@ class _HomePageState extends State<HomePage> {
             ),
             Expanded(
               child: ReorderableListView(
-                buildDefaultDragHandles: true,
+                buildDefaultDragHandles: true, // ВЕРНУЛИ обычное зажатие для сортировки
                 onReorder: (oldIndex, newIndex) {
                   setState(() {
                     if (newIndex > oldIndex) newIndex -= 1;
                     final contact = contacts.removeAt(oldIndex);
                     contacts.insert(newIndex, contact);
                   });
-                  _dbService.updateContactsOrder(contacts);
+                  _dbService.updateContactsOrder(contacts, oldIndex, newIndex);
                 },
                 children: contacts.map((contact) {
                   return InkWell(
                     key: ValueKey(contact.id),
-                    onTap: () {
-                      // ВИПРАВЛЕНО: Передаємо existingNames при редагуванні ІСНУЮЧОГО контакту
-                      Navigator.push(
+                    onTap: () async {
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
                             builder: (context) => ContactPage(
@@ -290,6 +312,8 @@ class _HomePageState extends State<HomePage> {
                             )
                         ),
                       );
+                      _invalidateCache();
+                      setState((){});
                     },
                     child: Container(
                       decoration: BoxDecoration(

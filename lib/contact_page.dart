@@ -5,6 +5,22 @@ import 'firestore_service.dart';
 import 'app_constants.dart';
 import 'validators.dart';
 
+// Класс перенесен сюда для чистоты архитектуры
+class DynamicField {
+  final TextEditingController keyController;
+  final TextEditingController valueController;
+  FieldType type;
+
+  DynamicField({required String key, required String value, this.type = FieldType.text})
+      : keyController = TextEditingController(text: key),
+        valueController = TextEditingController(text: value);
+
+  void dispose() {
+    keyController.dispose();
+    valueController.dispose();
+  }
+}
+
 class ContactPage extends StatefulWidget {
   final Set<String> existingFields;
   final Set<String> existingNames;
@@ -47,9 +63,7 @@ class _ContactPageState extends State<ContactPage> {
 
     for (String key in allPossibleKeys) {
       String valStr = currentValues[key]?.toString() ?? "";
-
       FieldType inferredType = Validators.inferType(valStr);
-
       _fields.add(DynamicField(key: key, value: valStr, type: inferredType));
     }
   }
@@ -221,7 +235,43 @@ class _ContactPageState extends State<ContactPage> {
                     const SnackBar(content: Text('Поле видалено')),
                   );
                 },
-                child: const Text('Вилити'),
+                child: const Text('Видалити'),
+              ),
+            ],
+          );
+        }
+    );
+  }
+
+  // НОВИЙ МЕТОД: Підтвердження видалення всього контакту
+  void _confirmDeleteContact() {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Видалення контакту'),
+            content: Text('Ви впевнені, що хочете видалити "${widget.contact?.name}"?\nЦю дію неможливо скасувати.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Скасувати'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () {
+                  if (widget.contact?.id != null) {
+                    _dbService.deleteContact(widget.contact!.id!);
+                  }
+                  Navigator.pop(context); // Закриваємо діалог
+                  Navigator.pop(context); // Закриваємо сторінку контакту
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Контакт видалено')),
+                  );
+                },
+                child: const Text('Видалити'),
               ),
             ],
           );
@@ -319,7 +369,6 @@ class _ContactPageState extends State<ContactPage> {
   void _saveContact() {
     final name = _nameController.text.trim();
 
-    // ВИКОРИСТОВУЄМО НАШ НОВИЙ ВАЛИДАТОР С ПРОВЕРКОЙ НА УНИКАЛЬНОСТЬ
     final nameError = Validators.validateContactName(name, widget.existingNames, widget.contact?.name);
     if (nameError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -444,6 +493,13 @@ class _ContactPageState extends State<ContactPage> {
         elevation: 0,
         iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
         actions: [
+          // Кнопка видалення (тільки якщо контакт вже існує)
+          if (widget.contact != null)
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              tooltip: 'Видалити контакт',
+              onPressed: _confirmDeleteContact,
+            ),
           TextButton(
             onPressed: _saveContact,
             child: const Text('Зберегти', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
