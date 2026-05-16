@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 
 import 'app_drawer.dart';
-import 'contact_page.dart'; // Оновлений імпорт
+import 'contact_page.dart';
 import 'firestore_service.dart';
 import 'contact_model.dart';
 import 'login_page.dart';
@@ -64,6 +64,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
   List<String> _columns = ["Ім'я", "Телефон"];
   final Set<String> _knownKeys = {"Ім'я", "Телефон"};
+
+  // Змінна для збереження нашого потоку
+  late Stream<List<Contact>> _contactsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    // Ініціалізуємо потік лише ОДИН РАЗ при завантаженні сторінки
+    _contactsStream = _dbService.getContactsStream();
+  }
 
   Set<String> _getAllAvailableKeys(List<Contact> contacts) {
     Set<String> keys = {};
@@ -161,20 +171,45 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  DataCell _buildCell(Contact contact, String columnName) {
-    final value = contact.fields[columnName]?.toString() ?? '';
-    return DataCell(
-        Text(
-          value,
-          style: columnName == "Ім'я" ? const TextStyle(fontWeight: FontWeight.bold) : null,
-        )
-    );
+  // Розраховує оптимальну ширину для конкретної колонки
+  double _calculateColumnWidth(String columnName, List<Contact> contacts) {
+    double maxWidth = 0.0;
+
+    final textStyle = const TextStyle(fontSize: 14);
+    final headerStyle = const TextStyle(fontWeight: FontWeight.bold, fontSize: 16);
+
+    final headerPainter = TextPainter(
+      text: TextSpan(text: columnName, style: headerStyle),
+      maxLines: 1,
+      textDirection: TextDirection.ltr,
+    )..layout();
+    maxWidth = headerPainter.size.width;
+
+    for (var contact in contacts) {
+      final value = contact.fields[columnName]?.toString() ?? '';
+      final isName = columnName == "Ім'я";
+
+      final cellPainter = TextPainter(
+        text: TextSpan(text: value, style: isName ? headerStyle : textStyle),
+        maxLines: 1,
+        textDirection: TextDirection.ltr,
+      )..layout();
+
+      if (cellPainter.size.width > maxWidth) {
+        maxWidth = cellPainter.size.width;
+      }
+    }
+
+    maxWidth += 36.0;
+
+    return maxWidth > 150.0 ? 150.0 : maxWidth;
   }
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<Contact>>(
-      stream: _dbService.getContactsStream(),
+      // Використовуємо збережений потік замість постійного виклику функції
+      stream: _contactsStream,
       builder: (context, snapshot) {
         final contacts = snapshot.data ?? [];
         final allKeys = _getAllAvailableKeys(contacts);
@@ -242,32 +277,100 @@ class _MyHomePageState extends State<MyHomePage> {
       );
     }
 
+    Map<String, double> columnWidths = {};
+    double totalWidth = 50.0; // Закладаємо 50 пікселів під іконку перетягування
+
+    for (String colName in _columns) {
+      double width = _calculateColumnWidth(colName, contacts);
+      columnWidths[colName] = width;
+      totalWidth += width;
+    }
+
     return SingleChildScrollView(
-      scrollDirection: Axis.vertical,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          showCheckboxColumn: false, // Вимикаємо чекбокси для клікабельних рядків
-          columns: _columns.map((colName) => DataColumn(
-            label: Text(colName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          )).toList(),
-          rows: contacts.map((contact) {
-            return DataRow(
-              // Обробник натискання на рядок
-              onSelectChanged: (selected) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => ContactPage(
-                        existingFields: _knownKeys,
-                        contact: contact, // Передаємо обраний контакт для редагування
-                      )
-                  ),
-                );
-              },
-              cells: _columns.map((colName) => _buildCell(contact, colName)).toList(),
-            );
-          }).toList(),
+      scrollDirection: Axis.horizontal,
+      child: SizedBox(
+        width: totalWidth,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ЗАГОЛОВОК ТАБЛИЦІ
+            Container(
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: Colors.grey.shade300, width: 2)),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 12.0),
+              child: Row(
+                children: [
+                  ..._columns.map((colName) => SizedBox(
+                    width: columnWidths[colName],
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Text(colName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  )),
+                  const SizedBox(width: 48), // Місце під іконку drag_handle
+                ],
+              ),
+            ),
+
+            // СПИСОК КОНТАКТІВ
+            Expanded(
+              child: ReorderableListView(
+                buildDefaultDragHandles: true,
+                onReorder: (oldIndex, newIndex) {
+                  // Викликаємо setState, щоб оновити інтерфейс миттєво
+                  setState(() {
+                    if (newIndex > oldIndex) newIndex -= 1;
+
+                    final contact = contacts.removeAt(oldIndex);
+                    contacts.insert(newIndex, contact);
+                  });
+
+                  // Firebase зберігає порядок у фоні
+                  _dbService.updateContactsOrder(contacts);
+                },
+                children: contacts.map((contact) {
+                  return InkWell(
+                    key: ValueKey(contact.id),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => ContactPage(
+                              existingFields: _knownKeys,
+                              contact: contact,
+                            )
+                        ),
+                      );
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12.0),
+                      child: Row(
+                        children: _columns.map((colName) {
+                          final value = contact.fields[colName]?.toString() ?? '';
+                          return SizedBox(
+                            width: columnWidths[colName],
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: Text(
+                                value,
+                                style: colName == "Ім'я" ? const TextStyle(fontWeight: FontWeight.bold) : null,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 // Импортируем наши новые экраны, чтобы к ним можно было перейти
 import 'settings_page.dart';
-import 'profile_page.dart';
 import 'auth_service.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -33,17 +32,6 @@ class AppDrawer extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const SettingsPage()),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('Профіль'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfilePage()),
               );
             },
           ),
