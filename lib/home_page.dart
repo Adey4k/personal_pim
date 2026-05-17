@@ -16,8 +16,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final FirestoreService _dbService = FirestoreService();
 
-  final List<String> _columns = [AppKeys.name, AppKeys.phone];
-  final Set<String> _knownKeys = {AppKeys.name, AppKeys.phone};
+  final List<String> _columns = [AppKeys.name, AppKeys.phone, AppKeys.email, AppKeys.birthday, AppKeys.groups];
+  final Set<String> _knownKeys = {AppKeys.name, AppKeys.phone, AppKeys.email, AppKeys.birthday, AppKeys.groups};
 
   final Map<String, double> _columnWidthCache = {};
   late Stream<List<Contact>> _contactsStream;
@@ -57,6 +57,14 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  MaterialColor _getGroupColor(String groupName) {
+    final List<MaterialColor> colors = [
+      Colors.blue, Colors.green, Colors.orange, Colors.purple,
+      Colors.teal, Colors.pink, Colors.indigo, Colors.brown,
+      Colors.cyan, Colors.deepOrange
+    ];
+    return colors[groupName.hashCode.abs() % colors.length];
+  }
   double _calculateColumnWidth(String columnName, List<Contact> contacts) {
     if (_columnWidthCache.containsKey(columnName)) {
       return _columnWidthCache[columnName]!;
@@ -84,8 +92,14 @@ class _HomePageState extends State<HomePage> {
       }
     }
 
+    if (columnName == AppKeys.groups) {
+      maxWidth += 60.0;
+    }
+
     maxWidth += 36.0;
-    final finalWidth = maxWidth > 150.0 ? 150.0 : maxWidth;
+
+    final maxAllowedWidth = columnName == AppKeys.groups ? 250.0 : 150.0;
+    final finalWidth = maxWidth > maxAllowedWidth ? maxAllowedWidth : maxWidth;
 
     _columnWidthCache[columnName] = finalWidth;
     return finalWidth;
@@ -192,6 +206,14 @@ class _HomePageState extends State<HomePage> {
         final allKeys = _getAllAvailableKeys(contacts);
         final existingNames = contacts.map((c) => c.name).toSet();
 
+        Set<String> existingGroups = {};
+        for (var c in contacts) {
+          final groupStr = c.fields[AppKeys.groups]?.toString() ?? '';
+          if (groupStr.isNotEmpty) {
+            existingGroups.addAll(groupStr.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty));
+          }
+        }
+
         _updateKnownKeysIfNeeded(allKeys);
 
         return Scaffold(
@@ -208,7 +230,7 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           drawer: const AppDrawer(),
-          body: _buildBody(snapshot, contacts, existingNames),
+          body: _buildBody(snapshot, contacts, existingNames, existingGroups),
           floatingActionButton: FloatingActionButton(
             onPressed: () async {
               await Navigator.push(
@@ -217,6 +239,7 @@ class _HomePageState extends State<HomePage> {
                     builder: (context) => ContactPage(
                       existingFields: _knownKeys,
                       existingNames: existingNames,
+                      existingGroups: existingGroups,
                     )
                 ),
               );
@@ -231,7 +254,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildBody(AsyncSnapshot<List<Contact>> snapshot, List<Contact> contacts, Set<String> existingNames) {
+  Widget _buildBody(AsyncSnapshot<List<Contact>> snapshot, List<Contact> contacts, Set<String> existingNames, Set<String> existingGroups) {
     if (snapshot.connectionState == ConnectionState.waiting) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -289,7 +312,7 @@ class _HomePageState extends State<HomePage> {
             ),
             Expanded(
               child: ReorderableListView(
-                buildDefaultDragHandles: true, // ВЕРНУЛИ обычное зажатие для сортировки
+                buildDefaultDragHandles: true,
                 onReorder: (oldIndex, newIndex) {
                   setState(() {
                     if (newIndex > oldIndex) newIndex -= 1;
@@ -308,6 +331,7 @@ class _HomePageState extends State<HomePage> {
                             builder: (context) => ContactPage(
                               existingFields: _knownKeys,
                               existingNames: existingNames,
+                              existingGroups: existingGroups,
                               contact: contact,
                             )
                         ),
@@ -323,16 +347,59 @@ class _HomePageState extends State<HomePage> {
                       child: Row(
                         children: _columns.map((colName) {
                           final value = contact.fields[colName]?.toString() ?? '';
+                          Widget cellContent;
+
+                          if (colName == AppKeys.groups && value.isNotEmpty) {
+                            List<String> groups = value.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+                            cellContent = SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: groups.map((g) {
+                                  final color = _getGroupColor(g);
+                                  return Container(
+                                    margin: const EdgeInsets.only(right: 6.0),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                    decoration: BoxDecoration(
+                                      color: color.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(8.0),
+                                      border: Border.all(color: color.withValues(alpha: 0.5)),
+                                    ),
+                                    child: Text(
+                                      g,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: color.shade800,
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            );
+                          } else if (value.toLowerCase() == 'true') {
+                            cellContent = const Align(
+                              alignment: Alignment.centerLeft,
+                              child: Icon(Icons.check_circle, color: Colors.green, size: 20),
+                            );
+                          } else if (value.toLowerCase() == 'false') {
+                            cellContent = const Align(
+                              alignment: Alignment.centerLeft,
+                              child: Icon(Icons.cancel, color: Colors.red, size: 20),
+                            );
+                          } else {
+                            cellContent = Text(
+                              value,
+                              style: colName == AppKeys.name ? const TextStyle(fontWeight: FontWeight.bold) : null,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            );
+                          }
+
                           return SizedBox(
                             width: columnWidths[colName],
                             child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: Text(
-                                value,
-                                style: colName == AppKeys.name ? const TextStyle(fontWeight: FontWeight.bold) : null,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                              child: cellContent,
                             ),
                           );
                         }).toList(),

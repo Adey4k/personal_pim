@@ -24,10 +24,6 @@ class FirestoreService {
     final collection = _getUserCollection();
     if (collection == null) return;
 
-    // --- ИСПРАВЛЕНИЕ RACE CONDITION ---
-    // Вместо чтения базы данных (лишний запрос к Firebase) мы просто
-    // берем текущее время в миллисекундах. Это число всегда уникально
-    // и всегда больше предыдущего, поэтому контакт появится в конце.
     contact.orderIndex = DateTime.now().millisecondsSinceEpoch;
 
     await collection.add(contact.toMap());
@@ -40,13 +36,61 @@ class FirestoreService {
     await collection.doc(contact.id).update(contact.toMap());
   }
 
+  Future<void> renameGroupGlobal(String oldName, String newName) async {
+    final collection = _getUserCollection();
+    if (collection == null) return;
+
+    final snapshot = await collection.get();
+    final batch = FirebaseFirestore.instance.batch();
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data() as Map<String, dynamic>;
+      final groupsStr = data[AppKeys.groups]?.toString() ?? '';
+
+      if (groupsStr.isNotEmpty) {
+        List<String> groups = groupsStr.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+        if (groups.contains(oldName)) {
+          int index = groups.indexOf(oldName);
+          groups[index] = newName;
+          batch.update(doc.reference, {AppKeys.groups: groups.join(', ')});
+        }
+      }
+    }
+    await batch.commit();
+  }
+
+  Future<void> deleteGroupGlobal(String groupName) async {
+    final collection = _getUserCollection();
+    if (collection == null) return;
+
+    final snapshot = await collection.get();
+    final batch = FirebaseFirestore.instance.batch();
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data() as Map<String, dynamic>;
+      final groupsStr = data[AppKeys.groups]?.toString() ?? '';
+
+      if (groupsStr.isNotEmpty) {
+        List<String> groups = groupsStr.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+        if (groups.contains(groupName)) {
+          groups.remove(groupName);
+          if (groups.isEmpty) {
+            batch.update(doc.reference, {AppKeys.groups: FieldValue.delete()});
+          } else {
+            batch.update(doc.reference, {AppKeys.groups: groups.join(', ')});
+          }
+        }
+      }
+    }
+    await batch.commit();
+  }
+
   Future<void> updateContactsOrder(List<Contact> contacts, int oldIndex, int newIndex) async {
     final collection = _getUserCollection();
     if (collection == null) return;
 
     final batch = FirebaseFirestore.instance.batch();
 
-    // Определяем диапазон реально изменившихся элементов
     final startIndex = oldIndex < newIndex ? oldIndex : newIndex;
     final endIndex = oldIndex > newIndex ? oldIndex : newIndex;
 

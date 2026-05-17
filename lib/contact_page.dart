@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'contact_model.dart';
 import 'firestore_service.dart';
 import 'app_constants.dart';
 import 'validators.dart';
 
-// Класс перенесен сюда для чистоты архитектуры
 class DynamicField {
   final TextEditingController keyController;
   final TextEditingController valueController;
@@ -24,12 +24,14 @@ class DynamicField {
 class ContactPage extends StatefulWidget {
   final Set<String> existingFields;
   final Set<String> existingNames;
+  final Set<String> existingGroups;
   final Contact? contact;
 
   const ContactPage({
     super.key,
     required this.existingFields,
     required this.existingNames,
+    required this.existingGroups,
     this.contact
   });
 
@@ -40,19 +42,39 @@ class ContactPage extends StatefulWidget {
 class _ContactPageState extends State<ContactPage> {
   final FirestoreService _dbService = FirestoreService();
   final TextEditingController _nameController = TextEditingController();
-  final List<DynamicField> _fields = [];
+  final TextEditingController _groupInputController = TextEditingController();
 
+  final List<DynamicField> _fields = [];
   bool _showEmptyFields = true;
+
+  Set<String> _availableGroups = {};
+  List<String> _selectedGroups = [];
+
+  Map<String, int> _customGroupColors = {};
+
+  final List<MaterialColor> _availableColors = [
+    Colors.blue, Colors.green, Colors.orange, Colors.purple,
+    Colors.teal, Colors.pink, Colors.indigo, Colors.brown,
+    Colors.cyan, Colors.deepOrange
+  ];
 
   @override
   void initState() {
     super.initState();
 
+    _availableGroups = Set.from(widget.existingGroups);
+
     if (widget.contact != null) {
       _nameController.text = widget.contact!.name;
     }
 
-    Set<String> allPossibleKeys = {AppKeys.phone};
+    Set<String> allPossibleKeys = {
+      AppKeys.phone,
+      AppKeys.email,
+      AppKeys.birthday,
+      AppKeys.groups,
+    };
+
     allPossibleKeys.addAll(widget.existingFields);
     if (widget.contact != null) {
       allPossibleKeys.addAll(widget.contact!.fields.keys);
@@ -64,8 +86,25 @@ class _ContactPageState extends State<ContactPage> {
     for (String key in allPossibleKeys) {
       String valStr = currentValues[key]?.toString() ?? "";
       FieldType inferredType = Validators.inferType(valStr);
+
+      if (key == AppKeys.birthday) {
+        inferredType = FieldType.date;
+      }
+
+      if (key == AppKeys.groups && valStr.isNotEmpty) {
+        _selectedGroups = valStr.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+        _availableGroups.addAll(_selectedGroups);
+      }
+
       _fields.add(DynamicField(key: key, value: valStr, type: inferredType));
     }
+  }
+
+  MaterialColor _getGroupColor(String groupName) {
+    if (_customGroupColors.containsKey(groupName)) {
+      return _availableColors[_customGroupColors[groupName]!];
+    }
+    return _availableColors[groupName.hashCode.abs() % _availableColors.length];
   }
 
   IconData _getIconForType(FieldType type) {
@@ -73,7 +112,7 @@ class _ContactPageState extends State<ContactPage> {
       case FieldType.number: return Icons.numbers;
       case FieldType.date: return Icons.calendar_today;
       case FieldType.boolean: return Icons.check_box;
-      case FieldType.text: default: return Icons.text_fields;
+      case FieldType.text: return Icons.text_fields;
     }
   }
 
@@ -243,7 +282,6 @@ class _ContactPageState extends State<ContactPage> {
     );
   }
 
-  // НОВИЙ МЕТОД: Підтвердження видалення всього контакту
   void _confirmDeleteContact() {
     showDialog(
         context: context,
@@ -265,8 +303,8 @@ class _ContactPageState extends State<ContactPage> {
                   if (widget.contact?.id != null) {
                     _dbService.deleteContact(widget.contact!.id!);
                   }
-                  Navigator.pop(context); // Закриваємо діалог
-                  Navigator.pop(context); // Закриваємо сторінку контакту
+                  Navigator.pop(context);
+                  Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Контакт видалено')),
                   );
@@ -282,6 +320,8 @@ class _ContactPageState extends State<ContactPage> {
   void _showFieldOptions(int index) {
     FocusScope.of(context).unfocus();
 
+    final isGroupsField = _fields[index].keyController.text == AppKeys.groups;
+
     showModalBottomSheet(
         context: context,
         builder: (context) {
@@ -289,22 +329,24 @@ class _ContactPageState extends State<ContactPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ListTile(
-                  leading: const Icon(Icons.settings),
-                  title: const Text('Змінити тип поля'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _changeFieldType(index);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.edit),
-                  title: const Text('Перейменувати'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _renameField(index);
-                  },
-                ),
+                if (!isGroupsField) ...[
+                  ListTile(
+                    leading: const Icon(Icons.settings),
+                    title: const Text('Змінити тип поля'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _changeFieldType(index);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.edit),
+                    title: const Text('Перейменувати'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _renameField(index);
+                    },
+                  ),
+                ],
                 ListTile(
                   leading: const Icon(Icons.copy),
                   title: const Text('Скопіювати значення'),
@@ -316,14 +358,15 @@ class _ContactPageState extends State<ContactPage> {
                     );
                   },
                 ),
-                ListTile(
-                  leading: const Icon(Icons.delete, color: Colors.red),
-                  title: const Text('Видалити', style: TextStyle(color: Colors.red)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _confirmDeleteField(index);
-                  },
-                ),
+                if (!isGroupsField)
+                  ListTile(
+                    leading: const Icon(Icons.delete, color: Colors.red),
+                    title: const Text('Видалити', style: TextStyle(color: Colors.red)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _confirmDeleteField(index);
+                    },
+                  ),
               ],
             ),
           );
@@ -385,12 +428,20 @@ class _ContactPageState extends State<ContactPage> {
       final key = field.keyController.text.trim();
       final value = field.valueController.text.trim();
 
-      if (key.isNotEmpty && value.isNotEmpty) {
-        contactData[key] = value;
+      if (key.isNotEmpty) {
+        if (value.isNotEmpty) {
+          contactData[key] = value;
+        } else if (widget.contact != null && widget.contact!.fields.containsKey(key)) {
+          contactData[key] = FieldValue.delete();
+        }
       }
     }
 
-    final savedContact = Contact(id: widget.contact?.id, fields: contactData);
+    final savedContact = Contact(
+      id: widget.contact?.id,
+      fields: contactData,
+      orderIndex: widget.contact?.orderIndex ?? 0,
+    );
 
     if (widget.contact == null) {
       _dbService.addContact(savedContact);
@@ -401,8 +452,319 @@ class _ContactPageState extends State<ContactPage> {
     Navigator.pop(context);
   }
 
+  void _showGroupEditDialog(String oldGroup, DynamicField field, StateSetter setBottomSheetState) {
+    TextEditingController renameCtrl = TextEditingController(text: oldGroup);
+
+    int initialColorIndex = _customGroupColors.containsKey(oldGroup)
+        ? _customGroupColors[oldGroup]!
+        : (oldGroup.hashCode.abs() % _availableColors.length);
+
+    int selectedColorIndex = initialColorIndex;
+
+    showDialog(
+        context: context,
+        builder: (ctx) {
+          return StatefulBuilder(
+              builder: (ctx, setDialogState) {
+                return AlertDialog(
+                  title: const Text('Налаштування групи', style: TextStyle(fontWeight: FontWeight.bold)),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Назва групи', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        TextField(
+                          controller: renameCtrl,
+                          maxLength: 16,
+                          decoration: const InputDecoration(counterText: ""),
+                        ),
+                        const SizedBox(height: 16),
+
+                        const Text('Колір', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: List.generate(_availableColors.length, (index) {
+                            final color = _availableColors[index];
+                            final isSelected = index == selectedColorIndex;
+                            return GestureDetector(
+                              onTap: () => setDialogState(() => selectedColorIndex = index),
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: color,
+                                  shape: BoxShape.circle,
+                                  border: isSelected ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 3) : null,
+                                ),
+                                child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 20) : null,
+                              ),
+                            );
+                          }),
+                        ),
+                        const SizedBox(height: 32),
+
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.red,
+                                side: const BorderSide(color: Colors.red),
+                                padding: const EdgeInsets.symmetric(vertical: 12)
+                            ),
+                            icon: const Icon(Icons.delete_forever),
+                            label: const Text('Видалити групу із системи'),
+                            onPressed: () async {
+                              Navigator.pop(ctx);
+                              setState(() {
+                                _availableGroups.remove(oldGroup);
+                                _selectedGroups.remove(oldGroup);
+                                _customGroupColors.remove(oldGroup);
+                                field.valueController.text = _selectedGroups.join(', ');
+                              });
+                              setBottomSheetState((){});
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Групу видалено')));
+
+                              await _dbService.deleteGroupGlobal(oldGroup);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Скасувати')),
+                    ElevatedButton(
+                      onPressed: () async {
+                        final newName = renameCtrl.text.trim();
+                        if (newName.isEmpty) return;
+
+                        bool nameChanged = newName != oldGroup;
+
+                        setState(() {
+                          if (nameChanged) {
+                            List<String> avail = _availableGroups.toList();
+                            int iA = avail.indexOf(oldGroup);
+                            if (iA != -1) avail[iA] = newName;
+                            _availableGroups = avail.toSet();
+
+                            int iS = _selectedGroups.indexOf(oldGroup);
+                            if (iS != -1) _selectedGroups[iS] = newName;
+
+                            _customGroupColors.remove(oldGroup);
+                          }
+
+                          _customGroupColors[newName] = selectedColorIndex;
+                          field.valueController.text = _selectedGroups.join(', ');
+                        });
+
+                        setBottomSheetState((){});
+                        Navigator.pop(ctx);
+
+                        if (nameChanged) {
+                          await _dbService.renameGroupGlobal(oldGroup, newName);
+                        }
+                      },
+                      child: const Text('Зберегти'),
+                    ),
+                  ],
+                );
+              }
+          );
+        }
+    );
+  }
+
+  void _showManageGroupsBottomSheet(DynamicField field) {
+    showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (context) {
+          return StatefulBuilder(
+              builder: (context, setModalState) {
+                return Padding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom,
+                    left: 16, right: 16, top: 12,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                          width: 40, height: 4,
+                          decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(2))
+                      ),
+                      const SizedBox(height: 16),
+                      const Text('Керування групами', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 16),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _groupInputController,
+                              maxLength: 16,
+                              decoration: InputDecoration(
+                                hintText: 'Створити нову групу...',
+                                counterText: '',
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(color: Colors.grey.shade300)
+                                ),
+                              ),
+                              onSubmitted: (val) {
+                                String newGroup = val.trim();
+                                if (newGroup.isNotEmpty) {
+                                  if (!_availableGroups.contains(newGroup) && _availableGroups.length >= 10) {
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Максимум 10 груп!')));
+                                    return;
+                                  }
+                                  setState(() {
+                                    _availableGroups.add(newGroup);
+                                    if (!_selectedGroups.contains(newGroup) && _selectedGroups.length < 10) {
+                                      _selectedGroups.add(newGroup);
+                                    }
+                                    field.valueController.text = _selectedGroups.join(', ');
+                                  });
+                                  setModalState((){});
+                                  _groupInputController.clear();
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                              icon: Icon(Icons.add_circle, color: Theme.of(context).colorScheme.primary, size: 36),
+                              onPressed: () {
+                                final val = _groupInputController.text.trim();
+                                if (val.isNotEmpty) {
+                                  if (!_availableGroups.contains(val) && _availableGroups.length >= 10) {
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Максимум 10 груп!')));
+                                    return;
+                                  }
+                                  setState(() {
+                                    _availableGroups.add(val);
+                                    if (!_selectedGroups.contains(val) && _selectedGroups.length < 10) {
+                                      _selectedGroups.add(val);
+                                    }
+                                    field.valueController.text = _selectedGroups.join(', ');
+                                  });
+                                  setModalState((){});
+                                  _groupInputController.clear();
+                                }
+                              }
+                          )
+                        ],
+                      ),
+                      const Divider(height: 24),
+
+                      if (_availableGroups.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24.0),
+                          child: Text('Поки що немає жодної групи', style: TextStyle(color: Colors.grey)),
+                        ),
+
+                      ConstrainedBox(
+                        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: _availableGroups.length,
+                          itemBuilder: (context, index) {
+                            final group = _availableGroups.elementAt(index);
+                            final isSelected = _selectedGroups.contains(group);
+                            final color = _getGroupColor(group);
+
+                            return ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: Checkbox(
+                                value: isSelected,
+                                activeColor: color,
+                                onChanged: (bool? val) {
+                                  setState(() {
+                                    if (val == true) {
+                                      if (_selectedGroups.length < 10) {
+                                        _selectedGroups.add(group);
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Можна обрати не більше 10 груп')));
+                                      }
+                                    } else {
+                                      _selectedGroups.remove(group);
+                                    }
+                                    field.valueController.text = _selectedGroups.join(', ');
+                                  });
+                                  setModalState((){});
+                                },
+                              ),
+                              title: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                          color: color.withValues(alpha: 0.2),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(color: color.withValues(alpha: 0.5))
+                                      ),
+                                      child: Text(group, style: TextStyle(fontSize: 13, color: color.shade900, fontWeight: FontWeight.bold)),
+                                    ),
+                                  ]
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.grey),
+                                tooltip: 'Налаштувати',
+                                onPressed: () => _showGroupEditDialog(group, field, setModalState),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                );
+              }
+          );
+        }
+    );
+  }
+
   Widget _buildDynamicInput(int index) {
     final field = _fields[index];
+
+    if (field.keyController.text == AppKeys.groups) {
+      return InkWell(
+        onTap: () => _showManageGroupsBottomSheet(field),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: _selectedGroups.isEmpty
+              ? const Text('Натисніть, щоб обрати...', style: TextStyle(color: Colors.grey, fontSize: 16))
+              : Wrap(
+            spacing: 6.0,
+            runSpacing: 6.0,
+            children: _selectedGroups.map((group) {
+              final color = _getGroupColor(group);
+              return Chip(
+                label: Text(group, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color.shade900)),
+                backgroundColor: color.withValues(alpha: 0.2),
+                side: BorderSide(color: color.withValues(alpha: 0.5)),
+                visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0),
+              );
+            }).toList(),
+          ),
+        ),
+      );
+    }
 
     switch (field.type) {
       case FieldType.number:
@@ -459,7 +821,6 @@ class _ContactPageState extends State<ContactPage> {
           ),
         );
       case FieldType.text:
-      default:
         return TextField(
           controller: field.valueController,
           keyboardType: TextInputType.multiline,
@@ -479,6 +840,7 @@ class _ContactPageState extends State<ContactPage> {
   @override
   void dispose() {
     _nameController.dispose();
+    _groupInputController.dispose();
     for (var field in _fields) {
       field.dispose();
     }
@@ -493,7 +855,6 @@ class _ContactPageState extends State<ContactPage> {
         elevation: 0,
         iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
         actions: [
-          // Кнопка видалення (тільки якщо контакт вже існує)
           if (widget.contact != null)
             IconButton(
               icon: const Icon(Icons.delete_outline, color: Colors.red),
@@ -554,7 +915,13 @@ class _ContactPageState extends State<ContactPage> {
                               children: [
                                 Padding(
                                   padding: const EdgeInsets.only(top: 2.0),
-                                  child: Icon(_getIconForType(_fields[index].type), size: 16, color: Colors.grey),
+                                  child: Icon(
+                                    _fields[index].keyController.text == AppKeys.groups
+                                        ? Icons.label_outline
+                                        : _getIconForType(_fields[index].type),
+                                    size: 16,
+                                    color: Colors.grey,
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
