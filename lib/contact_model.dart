@@ -29,4 +29,9 @@ class Contact {
       orderIndex: orderIndex,
     );
   }
+
+  static List<String> parseGroups(String? groupsStr) {
+    if (groupsStr == null || groupsStr.isEmpty) return [];
+    return groupsStr.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+  }
 }

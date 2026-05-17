@@ -45,15 +45,14 @@ class FirestoreService {
 
     for (var doc in snapshot.docs) {
       final data = doc.data() as Map<String, dynamic>;
-      final groupsStr = data[AppKeys.groups]?.toString() ?? '';
+      final groupsStr = data[AppKeys.groups]?.toString();
 
-      if (groupsStr.isNotEmpty) {
-        List<String> groups = groupsStr.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-        if (groups.contains(oldName)) {
-          int index = groups.indexOf(oldName);
-          groups[index] = newName;
-          batch.update(doc.reference, {AppKeys.groups: groups.join(', ')});
-        }
+      List<String> groups = Contact.parseGroups(groupsStr); // Используем хелпер
+
+      if (groups.contains(oldName)) {
+        int index = groups.indexOf(oldName);
+        groups[index] = newName;
+        batch.update(doc.reference, {AppKeys.groups: groups.join(', ')});
       }
     }
     await batch.commit();
@@ -68,17 +67,16 @@ class FirestoreService {
 
     for (var doc in snapshot.docs) {
       final data = doc.data() as Map<String, dynamic>;
-      final groupsStr = data[AppKeys.groups]?.toString() ?? '';
+      final groupsStr = data[AppKeys.groups]?.toString();
 
-      if (groupsStr.isNotEmpty) {
-        List<String> groups = groupsStr.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-        if (groups.contains(groupName)) {
-          groups.remove(groupName);
-          if (groups.isEmpty) {
-            batch.update(doc.reference, {AppKeys.groups: FieldValue.delete()});
-          } else {
-            batch.update(doc.reference, {AppKeys.groups: groups.join(', ')});
-          }
+      List<String> groups = Contact.parseGroups(groupsStr); // Используем хелпер
+
+      if (groups.contains(groupName)) {
+        groups.remove(groupName);
+        if (groups.isEmpty) {
+          batch.update(doc.reference, {AppKeys.groups: FieldValue.delete()});
+        } else {
+          batch.update(doc.reference, {AppKeys.groups: groups.join(', ')});
         }
       }
     }

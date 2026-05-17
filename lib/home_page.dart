@@ -16,6 +16,10 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final FirestoreService _dbService = FirestoreService();
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String? _selectedGroupFilter; // Змінна для зберігання обраного фільтру групи
+
   final List<String> _columns = [AppKeys.name, AppKeys.phone, AppKeys.email, AppKeys.birthday, AppKeys.groups];
   final Set<String> _knownKeys = {AppKeys.name, AppKeys.phone, AppKeys.email, AppKeys.birthday, AppKeys.groups};
 
@@ -31,6 +35,12 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _contactsStream = _dbService.getContactsStream();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Set<String> _getAllAvailableKeys(List<Contact> contacts) {
@@ -65,6 +75,7 @@ class _HomePageState extends State<HomePage> {
     ];
     return colors[groupName.hashCode.abs() % colors.length];
   }
+
   double _calculateColumnWidth(String columnName, List<Contact> contacts) {
     if (_columnWidthCache.containsKey(columnName)) {
       return _columnWidthCache[columnName]!;
@@ -208,9 +219,9 @@ class _HomePageState extends State<HomePage> {
 
         Set<String> existingGroups = {};
         for (var c in contacts) {
-          final groupStr = c.fields[AppKeys.groups]?.toString() ?? '';
-          if (groupStr.isNotEmpty) {
-            existingGroups.addAll(groupStr.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty));
+          final groupStr = c.fields[AppKeys.groups]?.toString();
+          if (groupStr != null) {
+            existingGroups.addAll(Contact.parseGroups(groupStr));
           }
         }
 
@@ -263,155 +274,288 @@ class _HomePageState extends State<HomePage> {
       return Center(child: Text('Помилка: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
     }
 
-    if (contacts.isEmpty) {
-      return const Center(child: Text('Список контактів порожній', style: TextStyle(fontSize: 18)));
-    }
+    // ЛОГІКА ПОШУКУ ТА ФІЛЬТРАЦІЇ
+    bool isFilteringActive = _searchQuery.isNotEmpty || _selectedGroupFilter != null;
 
-    if (_columns.isEmpty) {
-      return const Center(
+    List<Contact> filteredContacts = contacts.where((contact) {
+      // 1. Перевірка фільтру по групі
+      if (_selectedGroupFilter != null) {
+        final groupStr = contact.fields[AppKeys.groups]?.toString();
+        final groups = Contact.parseGroups(groupStr);
+        if (!groups.contains(_selectedGroupFilter)) {
+          return false; // Контакт не належить до обраної групи
+        }
+      }
+
+      // 2. Перевірка текстового пошуку (ігноруючи колонку "Групи")
+      if (_searchQuery.isNotEmpty) {
+        final query = _searchQuery.toLowerCase();
+        bool matchesText = false;
+
+        for (String colName in _columns) {
+          if (colName == AppKeys.groups) continue; // ПРОПУСКАЄМО ГРУПИ В ТЕКСТОВОМУ ПОШУКУ
+
+          final value = contact.fields[colName]?.toString().toLowerCase() ?? '';
+          if (value.contains(query)) {
+            matchesText = true;
+            break;
+          }
+        }
+        if (!matchesText) return false;
+      }
+
+      return true; // Контакт пройшов всі активні фільтри
+    }).toList();
+
+    Widget content;
+
+    if (contacts.isEmpty) {
+      content = const Center(child: Text('Список контактів порожній', style: TextStyle(fontSize: 18)));
+    } else if (_columns.isEmpty) {
+      content = const Center(
           child: Text(
               'Виберіть хоча б одну колонку в налаштуваннях',
               style: TextStyle(fontSize: 16, color: Colors.grey)
           )
       );
-    }
+    } else if (filteredContacts.isEmpty) {
+      content = const Center(child: Text('За вашим запитом нічого не знайдено', style: TextStyle(fontSize: 18)));
+    } else {
+      Map<String, double> columnWidths = {};
+      double totalWidth = 50.0;
 
-    Map<String, double> columnWidths = {};
-    double totalWidth = 50.0;
+      for (String colName in _columns) {
+        double width = _calculateColumnWidth(colName, contacts);
+        columnWidths[colName] = width;
+        totalWidth += width;
+      }
 
-    for (String colName in _columns) {
-      double width = _calculateColumnWidth(colName, contacts);
-      columnWidths[colName] = width;
-      totalWidth += width;
-    }
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: SizedBox(
-        width: totalWidth,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.grey.shade300, width: 2)),
+      content = SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SizedBox(
+          width: totalWidth,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  border: Border(bottom: BorderSide(color: Colors.grey.shade300, width: 2)),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                child: Row(
+                  children: [
+                    ..._columns.map((colName) => SizedBox(
+                      width: columnWidths[colName],
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Text(colName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      ),
+                    )),
+                    const SizedBox(width: 48),
+                  ],
+                ),
               ),
-              padding: const EdgeInsets.symmetric(vertical: 12.0),
+              Expanded(
+                child: ReorderableListView(
+                  // Вимикаємо сортування, якщо активний пошук або фільтр
+                  buildDefaultDragHandles: !isFilteringActive,
+                  onReorder: (oldIndex, newIndex) {
+                    if (isFilteringActive) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Сортування вимкнено під час пошуку або фільтрації')),
+                      );
+                      return;
+                    }
+                    setState(() {
+                      if (newIndex > oldIndex) newIndex -= 1;
+                      final contact = contacts.removeAt(oldIndex);
+                      contacts.insert(newIndex, contact);
+                    });
+                    _dbService.updateContactsOrder(contacts, oldIndex, newIndex);
+                  },
+                  children: filteredContacts.map((contact) {
+                    return InkWell(
+                      key: ValueKey(contact.id),
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => ContactPage(
+                                existingFields: _knownKeys,
+                                existingNames: existingNames,
+                                existingGroups: existingGroups,
+                                contact: contact,
+                              )
+                          ),
+                        );
+                        _invalidateCache();
+                        setState((){});
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12.0),
+                        child: Row(
+                          children: _columns.map((colName) {
+                            final value = contact.fields[colName]?.toString() ?? '';
+                            Widget cellContent;
+
+                            if (colName == AppKeys.groups && value.isNotEmpty) {
+                              List<String> groups = Contact.parseGroups(value);
+                              cellContent = SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  children: groups.map((g) {
+                                    final color = _getGroupColor(g);
+                                    return Container(
+                                      margin: const EdgeInsets.only(right: 6.0),
+                                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                      decoration: BoxDecoration(
+                                        color: color.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(8.0),
+                                        border: Border.all(color: color.withValues(alpha: 0.5)),
+                                      ),
+                                      child: Text(
+                                        g,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: color.shade800,
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              );
+                            } else if (value.toLowerCase() == 'true') {
+                              cellContent = const Align(
+                                alignment: Alignment.centerLeft,
+                                child: Icon(Icons.check_circle, color: Colors.green, size: 20),
+                              );
+                            } else if (value.toLowerCase() == 'false') {
+                              cellContent = const Align(
+                                alignment: Alignment.centerLeft,
+                                child: Icon(Icons.cancel, color: Colors.red, size: 20),
+                              );
+                            } else {
+                              cellContent = Text(
+                                value,
+                                style: colName == AppKeys.name ? const TextStyle(fontWeight: FontWeight.bold) : null,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              );
+                            }
+
+                            return SizedBox(
+                              width: columnWidths[colName],
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                child: cellContent,
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Рядок текстового пошуку
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 4.0),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Пошук...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() {
+                    _searchQuery = '';
+                  });
+                  FocusScope.of(context).unfocus();
+                },
+              )
+                  : null,
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.0),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
+          ),
+        ),
+
+        // Панель з фільтрами груп
+        if (existingGroups.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  ..._columns.map((colName) => SizedBox(
-                    width: columnWidths[colName],
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Text(colName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    ),
-                  )),
-                  const SizedBox(width: 48),
+                  ChoiceChip(
+                    label: const Text('Всі'),
+                    selected: _selectedGroupFilter == null,
+                    onSelected: (bool selected) {
+                      if (selected) setState(() => _selectedGroupFilter = null);
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  ...existingGroups.map((group) {
+                    final color = _getGroupColor(group);
+                    final isSelected = _selectedGroupFilter == group;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: ChoiceChip(
+                        label: Text(
+                            group,
+                            style: TextStyle(
+                                color: isSelected ? Colors.white : color.shade900,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
+                            )
+                        ),
+                        selected: isSelected,
+                        selectedColor: color,
+                        backgroundColor: color.withValues(alpha: 0.1),
+                        side: BorderSide(color: color.withValues(alpha: 0.5)),
+                        onSelected: (bool selected) {
+                          setState(() {
+                            _selectedGroupFilter = selected ? group : null;
+                          });
+                        },
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),
-            Expanded(
-              child: ReorderableListView(
-                buildDefaultDragHandles: true,
-                onReorder: (oldIndex, newIndex) {
-                  setState(() {
-                    if (newIndex > oldIndex) newIndex -= 1;
-                    final contact = contacts.removeAt(oldIndex);
-                    contacts.insert(newIndex, contact);
-                  });
-                  _dbService.updateContactsOrder(contacts, oldIndex, newIndex);
-                },
-                children: contacts.map((contact) {
-                  return InkWell(
-                    key: ValueKey(contact.id),
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => ContactPage(
-                              existingFields: _knownKeys,
-                              existingNames: existingNames,
-                              existingGroups: existingGroups,
-                              contact: contact,
-                            )
-                        ),
-                      );
-                      _invalidateCache();
-                      setState((){});
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      child: Row(
-                        children: _columns.map((colName) {
-                          final value = contact.fields[colName]?.toString() ?? '';
-                          Widget cellContent;
+          ),
 
-                          if (colName == AppKeys.groups && value.isNotEmpty) {
-                            List<String> groups = value.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-                            cellContent = SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children: groups.map((g) {
-                                  final color = _getGroupColor(g);
-                                  return Container(
-                                    margin: const EdgeInsets.only(right: 6.0),
-                                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                                    decoration: BoxDecoration(
-                                      color: color.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(8.0),
-                                      border: Border.all(color: color.withValues(alpha: 0.5)),
-                                    ),
-                                    child: Text(
-                                      g,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: color.shade800,
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            );
-                          } else if (value.toLowerCase() == 'true') {
-                            cellContent = const Align(
-                              alignment: Alignment.centerLeft,
-                              child: Icon(Icons.check_circle, color: Colors.green, size: 20),
-                            );
-                          } else if (value.toLowerCase() == 'false') {
-                            cellContent = const Align(
-                              alignment: Alignment.centerLeft,
-                              child: Icon(Icons.cancel, color: Colors.red, size: 20),
-                            );
-                          } else {
-                            cellContent = Text(
-                              value,
-                              style: colName == AppKeys.name ? const TextStyle(fontWeight: FontWeight.bold) : null,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            );
-                          }
-
-                          return SizedBox(
-                            width: columnWidths[colName],
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: cellContent,
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
-        ),
-      ),
+        // Тіло таблиці
+        Expanded(child: content),
+      ],
     );
   }
 }
