@@ -1,17 +1,29 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'contact_model.dart';
 import 'firestore_service.dart';
 import 'app_constants.dart';
 import 'validators.dart';
 
+/* * Модель динамічного поля з підтримкою стану генерації ІІ.
+ * isAiGenerated використовується для підсвічування поля зеленим кольором.
+ */
 class DynamicField {
   final TextEditingController keyController;
   final TextEditingController valueController;
   FieldType type;
+  bool isAiGenerated;
 
-  DynamicField({required String key, required String value, this.type = FieldType.text})
+  DynamicField({
+    required String key,
+    required String value,
+    this.type = FieldType.text,
+    this.isAiGenerated = false,
+  })
       : keyController = TextEditingController(text: key),
         valueController = TextEditingController(text: value);
 
@@ -44,8 +56,11 @@ class _ContactPageState extends State<ContactPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _groupInputController = TextEditingController();
 
+  final stt.SpeechToText _speech = stt.SpeechToText();
+
   final List<DynamicField> _fields = [];
   bool _showEmptyFields = true;
+  bool _isNameAiGenerated = false;
 
   Set<String> _availableGroups = {};
   List<String> _selectedGroups = [];
@@ -109,6 +124,232 @@ class _ContactPageState extends State<ContactPage> {
       case FieldType.boolean: return Icons.check_box;
       case FieldType.text: return Icons.text_fields;
     }
+  }
+
+  /* * Обробка тексту через Gemini API з поверненням структурованого JSON.
+   */
+  Future<void> _processAiInput(String text) async {
+    try {
+      const apiKey = String.fromEnvironment('GEMINI_API_KEY');
+      if (apiKey.isEmpty) {
+        throw Exception('GEMINI_API_KEY не знайдено');
+      }
+
+      final model = GenerativeModel(
+        model: 'gemini-flash-latest',
+        apiKey: apiKey,
+        generationConfig: GenerationConfig(
+          responseMimeType: 'application/json',
+          responseSchema: Schema.object(
+            properties: {
+              'name': Schema.string(),
+              'groups': Schema.array(items: Schema.string()),
+              'fields': Schema.array(
+                items: Schema.object(
+                  properties: {
+                    'key': Schema.string(),
+                    'value': Schema.string(),
+                    'type': Schema.string(description: 'Повертати тільки: number, date, boolean, text'),
+                  },
+                ),
+              ),
+            },
+          ),
+        ),
+      );
+
+      final prompt = '''
+      Проаналізуй текст та витягни контактні дані.
+      ПРАВИЛА, ЯКІ НЕ МОЖНА ПОРУШУВАТИ:
+      1. ІМ'Я: Використовуй лише поле "name" для імені контакту. КАТЕГОРИЧНО ЗАБОРОНЕНО створювати властивості з назвою "Ім'я", "Имя", "Name", "ПІБ" у масиві fields.
+      2. ВЛАСТИВОСТІ: Існуючі поля в системі: ${widget.existingFields.join(', ')}. Максимально використовуй їх. Не створюй синоніми (наприклад, якщо є "Телефон", не створюй "Мобільний" чи "Номер").
+      3. ГРУПИ: Існуючі групи: ${_availableGroups.join(', ')}. Намагайся віднести контакт до однієї з існуючих груп, якщо вона підходить за змістом. НЕ створюй нові вузьконаправлені групи (наприклад, "юристи", "водії"), якщо є більш загальна існуюча група (наприклад, "Робота", "Колеги").
+
+      Текст для аналізу: $text
+      ''';
+
+      final response = await model.generateContent([Content.text(prompt)]);
+      final jsonStr = response.text;
+
+      if (jsonStr == null) {
+        throw Exception("ІІ повернув порожню відповідь");
+      }
+
+      final data = jsonDecode(jsonStr);
+
+      bool hasUsefulData = false;
+
+      setState(() {
+        if (data['name'] != null && data['name'].toString().trim().isNotEmpty) {
+          _nameController.text = data['name'];
+          _isNameAiGenerated = true;
+          hasUsefulData = true;
+        }
+
+        if (data['groups'] != null && (data['groups'] as List).isNotEmpty) {
+          List<String> aiGroups = List<String>.from(data['groups']);
+          for (String g in aiGroups) {
+            if (!_availableGroups.contains(g) && _availableGroups.length < 10) _availableGroups.add(g);
+            if (!_selectedGroups.contains(g) && _selectedGroups.length < 10) _selectedGroups.add(g);
+          }
+          final groupIdx = _fields.indexWhere((f) => f.keyController.text == AppKeys.groups);
+          if (groupIdx != -1) {
+            _fields[groupIdx].valueController.text = _selectedGroups.join(', ');
+            _fields[groupIdx].isAiGenerated = true;
+            hasUsefulData = true;
+          }
+        }
+
+        if (data['fields'] != null && (data['fields'] as List).isNotEmpty) {
+          for (var f in data['fields']) {
+            final String key = f['key'];
+            final String value = f['value'];
+            final String typeStr = f['type'] ?? 'text';
+
+            FieldType type = FieldType.text;
+            if (typeStr == 'number') type = FieldType.number;
+            if (typeStr == 'date') type = FieldType.date;
+            if (typeStr == 'boolean') type = FieldType.boolean;
+
+            final existingIdx = _fields.indexWhere((existing) => existing.keyController.text == key);
+
+            if (existingIdx != -1) {
+              _fields[existingIdx].valueController.text = value;
+              _fields[existingIdx].isAiGenerated = true;
+            } else {
+              _fields.add(DynamicField(key: key, value: value, type: type, isAiGenerated: true));
+            }
+          }
+          hasUsefulData = true;
+        }
+
+        if (hasUsefulData) {
+          _showEmptyFields = true;
+        }
+      });
+
+      // Зворотний зв'язок, якщо ІІ не знайшов корисних даних
+      if (!hasUsefulData && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Не вдалося розпізнати контактні дані у тексті.'),
+                backgroundColor: Colors.orange
+            )
+        );
+      }
+
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('Помилка розпізнавання: ${e.toString().replaceAll('Exception: ', '')}'),
+                backgroundColor: Colors.red
+            )
+        );
+      }
+    }
+  }
+
+  /* * UI-компонент інтелектуального вводу (Bottom Sheet).
+   */
+  void _showIntelligentInput() {
+    final TextEditingController aiInputController = TextEditingController();
+    bool isLoading = false;
+    bool isListening = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                left: 16,
+                right: 16,
+                top: 16,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text('Інтелектуальний ввід', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+
+                  if (isLoading)
+                    const Center(child: Padding(
+                      padding: EdgeInsets.all(32.0),
+                      child: CircularProgressIndicator(color: Colors.green),
+                    ))
+                  else ...[
+                    TextField(
+                      controller: aiInputController,
+                      maxLines: 6,
+                      minLines: 3,
+                      decoration: InputDecoration(
+                        hintText: 'Вставте скопійований текст або надиктуйте...',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: Icon(isListening ? Icons.mic : Icons.mic_none, size: 32),
+                          color: isListening ? Colors.red : Theme.of(context).colorScheme.primary,
+                          onPressed: () async {
+                            if (!isListening) {
+                              bool available = await _speech.initialize();
+                              if (available) {
+                                setModalState(() => isListening = true);
+                                _speech.listen(
+                                  localeId: 'uk-UA',
+                                  onResult: (result) {
+                                    setModalState(() {
+                                      aiInputController.text = result.recognizedWords;
+                                    });
+                                  },
+                                );
+                              }
+                            } else {
+                              setModalState(() => isListening = false);
+                              _speech.stop();
+                            }
+                          },
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          ),
+                          onPressed: () async {
+                            if (aiInputController.text.trim().isEmpty) return;
+                            setModalState(() {
+                              isLoading = true;
+                              isListening = false;
+                            });
+                            await _speech.stop();
+                            await _processAiInput(aiInputController.text.trim());
+                            if (context.mounted) Navigator.pop(context);
+                          },
+                          child: const Text('Розпізнати', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  ]
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   void _showAddFieldDialog() {
@@ -393,6 +634,7 @@ class _ContactPageState extends State<ContactPage> {
                 onPressed: () {
                   setState(() {
                     _fields[index].keyController.text = renameController.text.trim();
+                    _fields[index].isAiGenerated = false;
                   });
                   Navigator.pop(context);
                 },
@@ -485,6 +727,7 @@ class _ContactPageState extends State<ContactPage> {
                         _availableGroups.remove(oldGroup);
                         _selectedGroups.remove(oldGroup);
                         field.valueController.text = _selectedGroups.join(', ');
+                        field.isAiGenerated = false;
                       });
                       setBottomSheetState((){});
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Групу видалено')));
@@ -519,6 +762,7 @@ class _ContactPageState extends State<ContactPage> {
                     if (iS != -1) _selectedGroups[iS] = newName;
 
                     field.valueController.text = _selectedGroups.join(', ');
+                    field.isAiGenerated = false;
                   });
 
                   setBottomSheetState((){});
@@ -554,6 +798,7 @@ class _ContactPageState extends State<ContactPage> {
           _selectedGroups.add(newGroup);
         }
         field.valueController.text = _selectedGroups.join(', ');
+        field.isAiGenerated = false;
       });
       setModalState((){});
       _groupInputController.clear();
@@ -646,6 +891,7 @@ class _ContactPageState extends State<ContactPage> {
                                       _selectedGroups.remove(group);
                                     }
                                     field.valueController.text = _selectedGroups.join(', ');
+                                    field.isAiGenerated = false;
                                   });
                                   setModalState((){});
                                 },
@@ -718,6 +964,7 @@ class _ContactPageState extends State<ContactPage> {
         return TextField(
           controller: field.valueController,
           keyboardType: TextInputType.phone,
+          onChanged: (_) => setState(() => field.isAiGenerated = false),
           decoration: const InputDecoration(
             hintText: '0',
             hintStyle: TextStyle(color: Colors.grey),
@@ -738,6 +985,7 @@ class _ContactPageState extends State<ContactPage> {
             if (picked != null) {
               setState(() {
                 field.valueController.text = "${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}";
+                field.isAiGenerated = false;
               });
             }
           },
@@ -762,6 +1010,7 @@ class _ContactPageState extends State<ContactPage> {
               onChanged: (bool val) {
                 setState(() {
                   field.valueController.text = val.toString();
+                  field.isAiGenerated = false;
                 });
               },
             ),
@@ -773,6 +1022,7 @@ class _ContactPageState extends State<ContactPage> {
           keyboardType: TextInputType.multiline,
           minLines: 1,
           maxLines: 4,
+          onChanged: (_) => setState(() => field.isAiGenerated = false),
           decoration: const InputDecoration(
             hintText: 'Текст',
             hintStyle: TextStyle(color: Colors.grey),
@@ -817,13 +1067,15 @@ class _ContactPageState extends State<ContactPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
+          Container(
+            color: _isNameAiGenerated ? Colors.green.withValues(alpha: 0.1) : Colors.transparent,
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: TextField(
               controller: _nameController,
               keyboardType: TextInputType.multiline,
               minLines: 1,
               maxLines: 4,
+              onChanged: (_) => setState(() => _isNameAiGenerated = false),
               style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
               decoration: InputDecoration(
                   hintText: AppKeys.name,
@@ -836,7 +1088,7 @@ class _ContactPageState extends State<ContactPage> {
 
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
               itemCount: _fields.length,
               itemBuilder: (context, index) {
                 bool isEmpty = _fields[index].valueController.text.trim().isEmpty;
@@ -845,57 +1097,60 @@ class _ContactPageState extends State<ContactPage> {
                   return const SizedBox.shrink();
                 }
 
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 4.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: InkWell(
-                          onTap: () => _showFieldOptions(index),
-                          borderRadius: BorderRadius.circular(4),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 2.0),
-                                  child: Icon(
-                                    _fields[index].keyController.text == AppKeys.groups
-                                        ? Icons.label_outline
-                                        : _getIconForType(_fields[index].type),
-                                    size: 16,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    _fields[index].keyController.text.isEmpty
-                                        ? 'Властивість'
-                                        : _fields[index].keyController.text,
-                                    style: const TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
+                return Container(
+                  color: _fields[index].isAiGenerated ? Colors.green.withValues(alpha: 0.1) : Colors.transparent,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: InkWell(
+                            onTap: () => _showFieldOptions(index),
+                            borderRadius: BorderRadius.circular(4),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2.0),
+                                    child: Icon(
+                                      _fields[index].keyController.text == AppKeys.groups
+                                          ? Icons.label_outline
+                                          : _getIconForType(_fields[index].type),
+                                      size: 16,
+                                      color: Colors.grey,
                                     ),
-                                    maxLines: 4,
-                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _fields[index].keyController.text.isEmpty
+                                          ? 'Властивість'
+                                          : _fields[index].keyController.text,
+                                      style: const TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      maxLines: 4,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        flex: 3,
-                        child: _buildDynamicInput(index),
-                      ),
-                    ],
+                        const SizedBox(width: 16),
+                        Expanded(
+                          flex: 3,
+                          child: _buildDynamicInput(index),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
@@ -935,16 +1190,12 @@ class _ContactPageState extends State<ContactPage> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('В розробці')),
-                      );
-                    },
+                    onPressed: _showIntelligentInput,
                     icon: const Icon(Icons.auto_awesome),
                     label: const Text('Інтелектуальний ввід'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-                      foregroundColor: Theme.of(context).colorScheme.onSecondaryContainer,
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
                     ),
                   ),
                 ),

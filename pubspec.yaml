@@ -38,6 +38,10 @@ dependencies:
   cloud_firestore: ^6.3.0
   firebase_auth: ^6.4.0
   google_sign_in: ^7.2.0
+  shared_preferences: ^2.5.5
+  google_generative_ai: ^0.4.3
+  speech_to_text: ^7.3.0
+  cloud_functions: ^6.3.1
 
 dev_dependencies:
   flutter_test:

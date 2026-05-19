@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'app_drawer.dart';
 import 'contact_page.dart';
 import 'firestore_service.dart';
@@ -18,10 +19,11 @@ class _HomePageState extends State<HomePage> {
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String? _selectedGroupFilter; // Змінна для зберігання обраного фільтру групи
+  String? _selectedGroupFilter;
 
-  final List<String> _columns = [AppKeys.name, AppKeys.phone, AppKeys.email, AppKeys.birthday, AppKeys.groups];
-  final Set<String> _knownKeys = {AppKeys.name, AppKeys.phone, AppKeys.email, AppKeys.birthday, AppKeys.groups};
+  List<String> _columns = [];
+  final Set<String> _knownKeys = {};
+  static const String _prefsKey = 'saved_columns';
 
   final Map<String, double> _columnWidthCache = {};
   late Stream<List<Contact>> _contactsStream;
@@ -35,12 +37,39 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _contactsStream = _dbService.getContactsStream();
+    _loadColumns();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  /*
+   * Загрузка сохраненного состояния колонок из локального хранилища.
+   * При отсутствии данных применяется набор по умолчанию.
+   */
+  Future<void> _loadColumns() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedColumns = prefs.getStringList(_prefsKey);
+
+    setState(() {
+      if (savedColumns != null && savedColumns.isNotEmpty) {
+        _columns = savedColumns;
+      } else {
+        _columns = [AppKeys.name, AppKeys.phone, AppKeys.email, AppKeys.birthday, AppKeys.groups];
+      }
+      _knownKeys.addAll(_columns);
+    });
+  }
+
+  /*
+   * Сохранение текущего порядка и состава колонок в локальное хранилище.
+   */
+  Future<void> _saveColumns() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_prefsKey, _columns);
   }
 
   Set<String> _getAllAvailableKeys(List<Contact> contacts) {
@@ -61,6 +90,7 @@ class _HomePageState extends State<HomePage> {
       }
     }
     if (hasChanges) {
+      _saveColumns();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) setState(() {});
       });
@@ -148,6 +178,7 @@ class _HomePageState extends State<HomePage> {
                             final String item = _columns.removeAt(oldIndex);
                             _columns.insert(newIndex, item);
                           });
+                          _saveColumns();
                           setState(() {});
                         },
                         children: [
@@ -164,6 +195,7 @@ class _HomePageState extends State<HomePage> {
                                       setModalState(() {
                                         _columns.removeAt(index);
                                       });
+                                      _saveColumns();
                                       setState(() {});
                                     },
                                   ),
@@ -189,6 +221,7 @@ class _HomePageState extends State<HomePage> {
                             setModalState(() {
                               _columns.add(key);
                             });
+                            _saveColumns();
                             setState(() {});
                           },
                         );
@@ -274,26 +307,23 @@ class _HomePageState extends State<HomePage> {
       return Center(child: Text('Помилка: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
     }
 
-    // ЛОГІКА ПОШУКУ ТА ФІЛЬТРАЦІЇ
     bool isFilteringActive = _searchQuery.isNotEmpty || _selectedGroupFilter != null;
 
     List<Contact> filteredContacts = contacts.where((contact) {
-      // 1. Перевірка фільтру по групі
       if (_selectedGroupFilter != null) {
         final groupStr = contact.fields[AppKeys.groups]?.toString();
         final groups = Contact.parseGroups(groupStr);
         if (!groups.contains(_selectedGroupFilter)) {
-          return false; // Контакт не належить до обраної групи
+          return false;
         }
       }
 
-      // 2. Перевірка текстового пошуку (ігноруючи колонку "Групи")
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
         bool matchesText = false;
 
         for (String colName in _columns) {
-          if (colName == AppKeys.groups) continue; // ПРОПУСКАЄМО ГРУПИ В ТЕКСТОВОМУ ПОШУКУ
+          if (colName == AppKeys.groups) continue;
 
           final value = contact.fields[colName]?.toString().toLowerCase() ?? '';
           if (value.contains(query)) {
@@ -304,7 +334,7 @@ class _HomePageState extends State<HomePage> {
         if (!matchesText) return false;
       }
 
-      return true; // Контакт пройшов всі активні фільтри
+      return true;
     }).toList();
 
     Widget content;
@@ -357,7 +387,6 @@ class _HomePageState extends State<HomePage> {
               ),
               Expanded(
                 child: ReorderableListView(
-                  // Вимикаємо сортування, якщо активний пошук або фільтр
                   buildDefaultDragHandles: !isFilteringActive,
                   onReorder: (oldIndex, newIndex) {
                     if (isFilteringActive) {
@@ -470,7 +499,6 @@ class _HomePageState extends State<HomePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Рядок текстового пошуку
         Padding(
           padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 4.0),
           child: TextField(
@@ -506,7 +534,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
 
-        // Панель з фільтрами груп
         if (existingGroups.isNotEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
@@ -553,7 +580,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-        // Тіло таблиці
         Expanded(child: content),
       ],
     );

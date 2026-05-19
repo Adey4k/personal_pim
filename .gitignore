@@ -46,3 +46,4 @@ app.*.map.json
 
 # Sectets configuration
 secrets.env
+key.properties

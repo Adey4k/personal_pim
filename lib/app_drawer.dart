@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'settings_page.dart';
+import 'calendar_page.dart';
 import 'auth_service.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -40,7 +41,7 @@ class AppDrawer extends StatelessWidget {
               Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const SettingsPage()),
+                MaterialPageRoute(builder: (context) => const CalendarPage()),
               );
             },
           ),
