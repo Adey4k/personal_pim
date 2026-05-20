@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'login_page.dart';
 import 'home_page.dart';
+import 'verify_email_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +22,10 @@ void main() async {
   runApp(const MyApp());
 }
 
+/*
+ * MyApp uses userChanges() stream to listen for real-time authentication states
+ * and forces redirection to VerifyEmailPage if the email address is not verified yet.
+ */
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -44,13 +49,17 @@ class MyApp extends StatelessWidget {
         );
       },
       home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
+        stream: FirebaseAuth.instance.userChanges(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(body: Center(child: CircularProgressIndicator()));
           }
           if (snapshot.hasData) {
-            return const HomePage(title: 'Мої контакти');
+            final user = snapshot.data!;
+            if (user.emailVerified) {
+              return const HomePage(title: 'Мої контакти');
+            }
+            return const VerifyEmailPage();
           }
           return const LoginPage();
         },
