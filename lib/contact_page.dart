@@ -8,6 +8,7 @@ import 'contact_model.dart';
 import 'firestore_service.dart';
 import 'app_constants.dart';
 import 'validators.dart';
+import 'env.dart';
 
 /* * Модель динамічного поля з підтримкою стану генерації ІІ.
  * isAiGenerated використовується для підсвічування поля зеленим кольором.
@@ -130,7 +131,7 @@ class _ContactPageState extends State<ContactPage> {
    */
   Future<void> _processAiInput(String text) async {
     try {
-      const apiKey = String.fromEnvironment('GEMINI_API_KEY');
+      final apiKey = Env.geminiApiKey;
       if (apiKey.isEmpty) {
         throw Exception('GEMINI_API_KEY не знайдено');
       }
@@ -168,15 +169,36 @@ class _ContactPageState extends State<ContactPage> {
       Текст для аналізу: $text
       ''';
 
-      final response = await model.generateContent([Content.text(prompt)]);
-      final jsonStr = response.text;
+      /* * Exponential backoff retry logic.
+       * Handles 503 (Service Unavailable) and 429 (Too Many Requests) errors
+       * by retrying with exponentially increasing delays.
+       */
+      GenerateContentResponse? response;
+      int maxRetries = 3;
+      int delayMs = 1500;
 
+      for (int i = 0; i < maxRetries; i++) {
+        try {
+          response = await model.generateContent([Content.text(prompt)]);
+          break;
+        } catch (e) {
+          final errorStr = e.toString();
+          if (errorStr.contains('503') || errorStr.contains('429')) {
+            if (i == maxRetries - 1) throw Exception("Сервер перевантажений. Спробуйте пізніше.");
+            await Future.delayed(Duration(milliseconds: delayMs));
+            delayMs *= 2;
+          } else {
+            rethrow;
+          }
+        }
+      }
+
+      final jsonStr = response?.text;
       if (jsonStr == null) {
         throw Exception("ІІ повернув порожню відповідь");
       }
 
       final data = jsonDecode(jsonStr);
-
       bool hasUsefulData = false;
 
       setState(() {
@@ -228,7 +250,6 @@ class _ContactPageState extends State<ContactPage> {
         }
       });
 
-      // Зворотний зв'язок, якщо ІІ не знайшов корисних даних
       if (!hasUsefulData && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

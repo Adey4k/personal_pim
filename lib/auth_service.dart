@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'env.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
 
-  // Фабричний конструктор
   factory AuthService() {
     return _instance;
   }
@@ -14,7 +14,7 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
-  static const String _googleClientId = String.fromEnvironment('GOOGLE_CLIENT_ID');
+  static final String _googleClientId = Env.googleClientId;
 
   Future<UserCredential?> signInWithGoogle() async {
     try {
