@@ -135,5 +135,25 @@
   "themeMode": "Theme Mode",
   "themeColor": "Theme Color",
   "light": "Light",
-  "dark": "Dark"
+  "dark": "Dark",
+  "dataManagement": "Data Management",
+  "importData": "Import Data",
+  "exportData": "Export Data",
+  "importSuccessful": "Data imported successfully",
+  "importFailed": "Failed to import data",
+  "exportSuccessful": "Data exported successfully",
+  "exportFailed": "Failed to export data",
+  "invalidFileFormat": "Invalid file format",
+  "noDataToExport": "No data to export",
+  "importFromPhone": "Import from Phone Book",
+  "permissionDenied": "Permission denied",
+  "selectContacts": "Select Contacts",
+  "importNContacts": "Import {count} contacts",
+  "@importNContacts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

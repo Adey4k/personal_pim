@@ -112,15 +112,17 @@ class GroupManagerSheet extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: color.withValues(alpha: 0.2),
+                            color: color.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: color.withValues(alpha: 0.5)),
+                            border: Border.all(color: color.withValues(alpha: 0.6)),
                           ),
                           child: Text(
                             group,
                             style: TextStyle(
                               fontSize: 13,
-                              color: (color as MaterialColor).shade900,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black87,
                               fontWeight: FontWeight.bold,
                             ),
                           ),

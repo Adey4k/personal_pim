@@ -30,7 +30,7 @@ class DynamicFieldWidget extends StatelessWidget {
 
     return Container(
       color: field.isAiGenerated
-          ? Colors.green.withValues(alpha: 0.1)
+          ? Theme.of(context).colorScheme.tertiaryContainer.withValues(alpha: 0.3)
           : Colors.transparent,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
@@ -63,8 +63,8 @@ class DynamicFieldWidget extends StatelessWidget {
                           field.keyController.text.isEmpty
                               ? l10n.newField
                               : AppKeys.getLocalizedLabel(field.keyController.text, l10n),
-                          style: const TextStyle(
-                            color: Colors.black,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                           ),
@@ -113,11 +113,13 @@ class DynamicFieldWidget extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: (color as MaterialColor).shade900,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black87,
                         ),
                       ),
-                      backgroundColor: color.withValues(alpha: 0.2),
-                      side: BorderSide(color: color.withValues(alpha: 0.5)),
+                      backgroundColor: color.withValues(alpha: 0.3),
+                      side: BorderSide(color: color.withValues(alpha: 0.6)),
                       visualDensity: VisualDensity.compact,
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0),
@@ -161,7 +163,9 @@ class DynamicFieldWidget extends StatelessWidget {
                   ? l10n.selectDate
                   : field.valueController.text,
               style: TextStyle(
-                color: field.valueController.text.isEmpty ? Colors.grey : Colors.black,
+                color: field.valueController.text.isEmpty
+                    ? Colors.grey
+                    : Theme.of(context).colorScheme.onSurface,
                 fontSize: 16,
               ),
             ),

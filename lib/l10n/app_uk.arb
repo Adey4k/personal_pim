@@ -121,5 +121,25 @@
   "themeMode": "Режим теми",
   "themeColor": "Колір теми",
   "light": "Світла",
-  "dark": "Темна"
+  "dark": "Темна",
+  "dataManagement": "Керування даними",
+  "importData": "Імпорт даних",
+  "exportData": "Експорт даних",
+  "importSuccessful": "Дані успішно імпортовано",
+  "importFailed": "Помилка імпорту даних",
+  "exportSuccessful": "Дані успішно експортовано",
+  "exportFailed": "Помилка експорту даних",
+  "invalidFileFormat": "Невірний формат файлу",
+  "noDataToExport": "Немає даних для експорту",
+  "importFromPhone": "Імпорт з телефонної книги",
+  "permissionDenied": "Доступ заборонено",
+  "selectContacts": "Оберіть контакти",
+  "importNContacts": "Імпортувати {count} контактів",
+  "@importNContacts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -79,13 +79,17 @@ class SearchFilterBar extends StatelessWidget {
                         label: Text(
                           group,
                           style: TextStyle(
-                            color: isSelected ? Colors.white : (color as MaterialColor).shade900,
+                            color: isSelected
+                                ? Colors.white
+                                : (Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black87),
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                           ),
                         ),
                         selected: isSelected,
                         selectedColor: color,
-                        backgroundColor: color.withValues(alpha: 0.1),
+                        backgroundColor: color.withValues(alpha: 0.2),
                         side: BorderSide(color: color.withValues(alpha: 0.5)),
                         onSelected: (bool selected) {
                           onGroupFilterChanged(selected ? group : null);

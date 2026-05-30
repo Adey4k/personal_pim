@@ -154,10 +154,15 @@ class _IntelligentInputSheetState extends State<IntelligentInputSheet> with Sing
                       height: 80,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: widget.isListening ? Colors.red : theme.colorScheme.primary,
+                        color: widget.isListening
+                            ? theme.colorScheme.error
+                            : theme.colorScheme.primary,
                         boxShadow: [
                           BoxShadow(
-                            color: (widget.isListening ? Colors.red : theme.colorScheme.primary).withValues(alpha: 0.3),
+                            color: (widget.isListening
+                                    ? theme.colorScheme.error
+                                    : theme.colorScheme.primary)
+                                .withValues(alpha: 0.3),
                             blurRadius: 15,
                             spreadRadius: 2,
                           )
@@ -166,7 +171,7 @@ class _IntelligentInputSheetState extends State<IntelligentInputSheet> with Sing
                       child: Icon(
                         widget.isListening ? Icons.stop : Icons.mic,
                         size: 40,
-                        color: Colors.white,
+                        color: theme.colorScheme.onPrimary,
                       ),
                     ),
                   ),
@@ -175,7 +180,9 @@ class _IntelligentInputSheetState extends State<IntelligentInputSheet> with Sing
                 Text(
                   widget.isListening ? l10n.listening : l10n.tapToSpeak,
                   style: TextStyle(
-                    color: widget.isListening ? Colors.red : Colors.grey[600],
+                    color: widget.isListening
+                        ? theme.colorScheme.error
+                        : theme.colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -186,8 +193,8 @@ class _IntelligentInputSheetState extends State<IntelligentInputSheet> with Sing
             
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 elevation: 0,

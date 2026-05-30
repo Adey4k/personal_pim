@@ -123,16 +123,18 @@ class ContactTable extends StatelessWidget {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 8.0, vertical: 4.0),
                                     decoration: BoxDecoration(
-                                      color: color.withValues(alpha: 0.15),
+                                      color: color.withValues(alpha: 0.3),
                                       borderRadius: BorderRadius.circular(8.0),
-                                      border: Border.all(color: color.withValues(alpha: 0.5)),
+                                      border: Border.all(color: color.withValues(alpha: 0.6)),
                                     ),
                                     child: Text(
                                       g,
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
-                                        color: (color as MaterialColor).shade800,
+                                        color: Theme.of(context).brightness == Brightness.dark
+                                            ? Colors.white
+                                            : Colors.black87,
                                       ),
                                     ),
                                   );
