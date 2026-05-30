@@ -1,0 +1,139 @@
+{
+  "appTitle": "Personal PIM",
+  "settings": "Settings",
+  "appMenu": "App Menu",
+  "home": "Home",
+  "calendar": "Calendar",
+  "calendarPlaceholder": "Here will be a calendar with dates, reminder settings and a task manager",
+  "language": "Language",
+  "english": "English",
+  "ukrainian": "Ukrainian",
+  "myContacts": "My Contacts",
+  "addContact": "Add Contact",
+  "configureColumns": "Configure Columns",
+  "configureTable": "Table Settings",
+  "columnReorderInstruction": "Drag to reorder. Tap ❌ to hide a column.",
+  "availableFieldsToAdd": "Available fields to add:",
+  "allFieldsAlreadyInTable": "All existing fields are already in the table",
+  "search": "Search",
+  "all": "All",
+  "noName": "No Name",
+  "error": "Error",
+  "loading": "Loading",
+  "login": "Login",
+  "loginTitle": "Login to App",
+  "password": "Password",
+  "confirmPassword": "Confirm Password",
+  "register": "Register",
+  "forgotPassword": "Forgot Password?",
+  "loginWithGoogle": "Login with Google",
+  "pleaseEnterEmailAndPassword": "Please enter email and password",
+  "fillAllFields": "Please fill all fields",
+  "passwordsDoNotMatch": "Passwords do not match",
+  "verificationEmailSent": "Verification email sent to your mail!",
+  "verifyEmailTitle": "Email Verification",
+  "verificationEmailSentTo": "A confirmation email has been sent to:\n{email}",
+  "@verificationEmailSentTo": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "checkEmailInstructions": "Please check your inbox and click on the link in the email to activate your account.\n\nIf there is no email within a few minutes, be sure to check your \"Spam\" folder.",
+  "emailResent": "Email resent successfully!",
+  "resendEmail": "Resend email",
+  "cancelAndReturn": "Cancel and return",
+  "enterEmailToResetPassword": "Enter email to reset password",
+  "passwordResetEmailSent": "If account exists, reset email sent!",
+  "logout": "Logout",
+  "email": "Email",
+  "phone": "Phone",
+  "name": "Name",
+  "birthday": "Birthday",
+  "groups": "Groups",
+  "save": "Save",
+  "cancel": "Cancel",
+  "edit": "Edit",
+  "delete": "Delete",
+  "deleteContact": "Delete Contact",
+  "deleteContactTitle": "Delete Contact",
+  "deleteContactConfirmation": "Are you sure you want to delete \"{name}\"?\nThis action cannot be undone.",
+  "@deleteContactConfirmation": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "contactDeleted": "Contact deleted",
+  "hideEmptyFields": "Hide empty fields",
+  "showEmptyFields": "Show empty fields",
+  "addField": "Add field",
+  "intelligentInput": "Intelligent input",
+  "listening": "Listening...",
+  "tapToSpeak": "Tap the microphone to speak",
+  "stop": "Stop",
+  "aiInputHint": "Write/paste copied text or dictate...",
+  "recognize": "Recognize",
+  "newField": "New field",
+  "fieldNameHint": "Name (e.g. Telegram)",
+  "dataType": "Data type:",
+  "textType": "Text",
+  "numberType": "Number/Phone",
+  "dateType": "Date",
+  "booleanType": "Boolean (Yes/No)",
+  "add": "Add",
+  "chooseFieldType": "Choose field type",
+  "deleteFieldTitle": "Delete field",
+  "deleteFieldConfirmation": "Are you sure you want to delete field \"{name}\"?\nThis action cannot be undone.",
+  "@deleteFieldConfirmation": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "deleteFieldUsageWarning": "This field has data in {count} contacts. Delete it for everyone?",
+  "@deleteFieldUsageWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fieldDeleted": "Field deleted",
+  "changeFieldType": "Change field type",
+  "rename": "Rename",
+  "copyValue": "Copy value",
+  "valueCopied": "Value copied!",
+  "fieldName": "Field name",
+  "tapToSelect": "Tap to select...",
+  "selectDate": "Select date",
+  "enterName": "Enter name",
+  "groupSettings": "Group settings",
+  "manageGroups": "Manage groups",
+  "createNewGroup": "Create new group...",
+  "noGroupsYet": "No groups yet",
+  "configure": "Configure",
+  "groupName": "Group name",
+  "nameWithoutCommas": "Name without commas",
+  "deleteGroupFromSystem": "Delete group from system",
+  "groupDeleted": "Group deleted",
+  "groupNameNoCommas": "Group name cannot contain commas!",
+  "max10Groups": "Maximum 10 groups!",
+  "max10SelectedGroups": "Maximum 10 groups can be selected",
+  "failedToRecognizeAi": "Failed to recognize contact data in text.",
+  "recognitionError": "Recognition error",
+  "geminiApiKeyNotFound": "GEMINI_API_KEY not found",
+  "serverOverloaded": "Server overloaded. Try again later.",
+  "aiReturnedEmptyResponse": "AI returned empty response",
+  "contactListEmpty": "Contact list is empty",
+  "selectAtLeastOneColumn": "Select at least one column in settings",
+  "noResultsFound": "No results found for your query",
+  "reorderingDisabledWhileFiltering": "Reordering is disabled during search or filtering",
+  "themeMode": "Theme Mode",
+  "themeColor": "Theme Color",
+  "light": "Light",
+  "dark": "Dark"
+}

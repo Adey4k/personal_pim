@@ -2,10 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
-import 'login_page.dart';
-import 'home_page.dart';
-import 'verify_email_page.dart';
+import 'pages/login_page.dart';
+import 'pages/home_page.dart';
+import 'pages/verify_email_page.dart';
+import 'utils/env.dart';
+import 'providers/locale_provider.dart';
+import 'providers/theme_provider.dart';
+import 'l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,12 +20,24 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  await GoogleSignIn.instance.initialize(
+    serverClientId: Env.googleClientId,
+  );
+
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
 
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => LocaleProvider()),
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 /*
@@ -31,11 +49,29 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localeProvider = Provider.of<LocaleProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return MaterialApp(
       title: 'Personal PIM',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: themeProvider.seedColor,
+          brightness: Brightness.light,
+        ),
+        useMaterial3: true,
       ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: themeProvider.seedColor,
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+      ),
+      themeMode: themeProvider.themeMode,
+      locale: localeProvider.locale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       builder: (context, child) {
         final mediaQueryData = MediaQuery.of(context);
         return MediaQuery(
@@ -57,7 +93,7 @@ class MyApp extends StatelessWidget {
           if (snapshot.hasData) {
             final user = snapshot.data!;
             if (user.emailVerified) {
-              return const HomePage(title: 'Мої контакти');
+              return const HomePage();
             }
             return const VerifyEmailPage();
           }
