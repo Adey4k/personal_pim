@@ -155,5 +155,8 @@
         "type": "int"
       }
     }
-  }
+  },
+  "eventsOnThisDay": "Events on this day",
+  "noEventsOnThisDay": "There are no events on this day",
+  "birthdayEvent": "Birthday"
 }

@@ -141,5 +141,8 @@
         "type": "int"
       }
     }
-  }
+  },
+  "eventsOnThisDay": "Події на цей день",
+  "noEventsOnThisDay": "На цей день подій немає",
+  "birthdayEvent": "День народження"
 }

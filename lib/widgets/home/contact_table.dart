@@ -77,6 +77,8 @@ class ContactTable extends StatelessWidget {
                           child: Text(
                             AppKeys.getLocalizedLabel(colName, l10n),
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       )),

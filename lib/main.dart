@@ -40,10 +40,6 @@ void main() async {
   );
 }
 
-/*
- * MyApp uses userChanges() stream to listen for real-time authentication states
- * and forces redirection to VerifyEmailPage if the email address is not verified yet.
- */
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
