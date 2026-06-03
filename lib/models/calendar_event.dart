@@ -4,6 +4,9 @@ class CalendarEvent {
   final String fieldName;
   final DateTime date;
   final bool isBirthday;
+  final bool remindYearly;
+  final List<String> remindBefore;
+  final int? age;
 
   CalendarEvent({
     required this.contactId,
@@ -11,5 +14,8 @@ class CalendarEvent {
     required this.fieldName,
     required this.date,
     this.isBirthday = false,
+    this.remindYearly = false,
+    this.remindBefore = const ['day'],
+    this.age,
   });
 }

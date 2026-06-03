@@ -12,6 +12,8 @@ class DynamicFieldWidget extends StatelessWidget {
   final IconData Function(FieldType) getIconForType;
   final Function(DateTime) onDatePicked;
   final Function(bool) onBooleanChanged;
+  final Function(bool) onRemindYearlyChanged;
+  final Function(List<String>) onRemindBeforeChanged;
 
   const DynamicFieldWidget({
     super.key,
@@ -22,6 +24,8 @@ class DynamicFieldWidget extends StatelessWidget {
     required this.getIconForType,
     required this.onDatePicked,
     required this.onBooleanChanged,
+    required this.onRemindYearlyChanged,
+    required this.onRemindBeforeChanged,
   });
 
   @override
@@ -144,32 +148,94 @@ class DynamicFieldWidget extends StatelessWidget {
           ),
         );
       case FieldType.date:
-        return InkWell(
-          onTap: () async {
-            DateTime? picked = await showDatePicker(
-              context: context,
-              initialDate: DateTime.now(),
-              firstDate: DateTime(1900),
-              lastDate: DateTime(2100),
-            );
-            if (picked != null) {
-              onDatePicked(picked);
-            }
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: Text(
-              field.valueController.text.isEmpty
-                  ? l10n.selectDate
-                  : field.valueController.text,
-              style: TextStyle(
-                color: field.valueController.text.isEmpty
-                    ? Colors.grey
-                    : Theme.of(context).colorScheme.onSurface,
-                fontSize: 16,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            InkWell(
+              onTap: () async {
+                DateTime? picked = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime(1900),
+                  lastDate: DateTime(2100),
+                );
+                if (picked != null) {
+                  onDatePicked(picked);
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Text(
+                  field.valueController.text.isEmpty
+                      ? l10n.selectDate
+                      : field.valueController.text,
+                  style: TextStyle(
+                    color: field.valueController.text.isEmpty
+                        ? Colors.grey
+                        : Theme.of(context).colorScheme.onSurface,
+                    fontSize: 16,
+                  ),
+                ),
               ),
             ),
-          ),
+            if (field.valueController.text.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.remindEveryYear,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ),
+                  SizedBox(
+                    height: 24,
+                    child: Transform.scale(
+                      scale: 0.7,
+                      child: Switch(
+                        value: field.remindYearly,
+                        onChanged: onRemindYearlyChanged,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.remindBefore,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () => _showMultiSelectReminders(context, l10n),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _getRemindersSummary(field.remindBefore, l10n),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_drop_down,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
         );
       case FieldType.boolean:
         return Align(
@@ -196,6 +262,99 @@ class DynamicFieldWidget extends StatelessWidget {
             contentPadding: const EdgeInsets.symmetric(vertical: 8.0),
           ),
         );
+    }
+  }
+
+  void _showMultiSelectReminders(BuildContext context, AppLocalizations l10n) {
+    final Map<String, String> options = {
+      'halfYear': l10n.halfYear,
+      'threeMonths': l10n.threeMonths,
+      'month': l10n.month,
+      'twoWeeks': l10n.twoWeeks,
+      'week': l10n.week,
+      'threeDays': l10n.threeDays,
+      'day': l10n.day,
+      'today': l10n.today,
+    };
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        l10n.remindBefore,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    ...options.entries.map((entry) {
+                      final isSelected = field.remindBefore.contains(entry.key);
+                      return CheckboxListTile(
+                        title: Text(entry.value),
+                        value: isSelected,
+                        dense: true,
+                        onChanged: (val) {
+                          final newList = List<String>.from(field.remindBefore);
+                          if (val == true) {
+                            newList.add(entry.key);
+                          } else {
+                            newList.remove(entry.key);
+                          }
+                          onRemindBeforeChanged(newList);
+                          setModalState(() {});
+                        },
+                      );
+                    }),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(l10n.save),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _getRemindersSummary(List<String> selected, AppLocalizations l10n) {
+    if (selected.isEmpty) return l10n.tapToSelect;
+    if (selected.length == 1) return _getLocalizedInterval(selected.first, l10n);
+    return "${selected.length} ...";
+  }
+
+  String _getLocalizedInterval(String key, AppLocalizations l10n) {
+    switch (key) {
+      case 'halfYear': return l10n.halfYear;
+      case 'threeMonths': return l10n.threeMonths;
+      case 'month': return l10n.month;
+      case 'twoWeeks': return l10n.twoWeeks;
+      case 'week': return l10n.week;
+      case 'threeDays': return l10n.threeDays;
+      case 'day': return l10n.day;
+      case 'today': return l10n.today;
+      default: return key;
     }
   }
 }

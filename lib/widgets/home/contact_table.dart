@@ -134,7 +134,15 @@ class ContactTable extends StatelessWidget {
                           child: Row(
                             children: [
                               ...columns.map((colName) {
-                                final value = contact.fields[colName]?.toString() ?? '';
+                                final rawValue = contact.fields[colName];
+                                String value;
+
+                                if (rawValue is Map) {
+                                  value = rawValue['date']?.toString() ?? '';
+                                } else {
+                                  value = rawValue?.toString() ?? '';
+                                }
+
                                 Widget cellContent;
 
                                 if (colName == AppKeys.groups && value.isNotEmpty) {

@@ -11,6 +11,7 @@ import 'pages/verify_email_page.dart';
 import 'utils/env.dart';
 import 'providers/locale_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/notification_provider.dart';
 import 'l10n/app_localizations.dart';
 
 void main() async {
@@ -34,6 +35,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (context) => LocaleProvider()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => NotificationProvider()),
       ],
       child: const MyApp(),
     ),
