@@ -30,10 +30,13 @@ void main() async {
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
 
+  final localeProvider = LocaleProvider();
+  await localeProvider.loadLocale(WidgetsBinding.instance.platformDispatcher.locale);
+
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => LocaleProvider()),
+        ChangeNotifierProvider.value(value: localeProvider),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => NotificationProvider()),
       ],

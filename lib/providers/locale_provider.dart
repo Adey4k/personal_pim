@@ -8,10 +8,32 @@ class LocaleProvider extends ChangeNotifier {
   Locale? get locale => _locale;
 
   LocaleProvider() {
-    _loadLocale();
+    // We will call loadLocale manually from main.dart to pass the system locale
+  }
+
+  Future<void> loadLocale(Locale systemLocale) async {
+    final prefs = await SharedPreferences.getInstance();
+    final languageCode = prefs.getString(_prefsKey);
+
+    if (languageCode != null) {
+      _locale = Locale(languageCode);
+    } else {
+      // Automatic detection logic
+      String code = systemLocale.languageCode;
+      if (code == 'ru' || code == 'uk') {
+        _locale = const Locale('uk');
+      } else if (['de', 'fr', 'es', 'pl', 'en'].contains(code)) {
+        _locale = Locale(code);
+      } else {
+        _locale = const Locale('en');
+      }
+    }
+    notifyListeners();
   }
 
   Future<void> _loadLocale() async {
+    // Keep this for backward compatibility or internal use if needed, 
+    // but the main initialization now happens in loadLocale(systemLocale)
     final prefs = await SharedPreferences.getInstance();
     final languageCode = prefs.getString(_prefsKey);
     if (languageCode != null) {
@@ -21,7 +43,7 @@ class LocaleProvider extends ChangeNotifier {
   }
 
   Future<void> setLocale(Locale locale) async {
-    if (!['en', 'uk'].contains(locale.languageCode)) return;
+    if (!['en', 'uk', 'de', 'fr', 'es', 'pl'].contains(locale.languageCode)) return;
 
     _locale = locale;
     notifyListeners();
