@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/contact.dart';
 import '../models/todo.dart';
 import '../utils/constants.dart';
+import 'home_widget_service.dart';
 
 class FirestoreService {
   static FirestoreService _instance = FirestoreService._internal();
@@ -231,9 +232,11 @@ class FirestoreService {
     }
 
     return collection.orderBy(AppKeys.orderIndex).snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
+      final contacts = snapshot.docs.map((doc) {
         return Contact.fromMap(doc.data() as Map<String, dynamic>, doc.id);
       }).toList();
+      HomeWidgetService.updateBirthdays(contacts);
+      return contacts;
     });
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../widgets/app_drawer.dart';
+import 'settings_page.dart';
+import 'calendar_page.dart';
 import '../widgets/home/search_filter_bar.dart';
 import '../widgets/home/column_settings_sheet.dart';
 import '../widgets/home/contact_table.dart';
@@ -20,6 +21,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final FirestoreService _dbService = FirestoreService();
+
+  int _selectedIndex = 0;
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -272,6 +275,43 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Scaffold(
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: [
+          _buildContactsTab(),
+          const CalendarPage(),
+          const SettingsPage(),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        items: [
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.home),
+            label: l10n.home,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.calendar_today),
+            label: l10n.calendar,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.settings),
+            label: l10n.settings,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactsTab() {
     return StreamBuilder<List<Contact>>(
       stream: _contactsStream,
       builder: (context, snapshot) {
@@ -292,7 +332,7 @@ class _HomePageState extends State<HomePage> {
         return Scaffold(
           appBar: AppBar(
             backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-            title: Text(AppLocalizations.of(context)!.myContacts),
+            title: Text(AppLocalizations.of(context)!.home),
             actions: [
               if (snapshot.hasData && contacts.isNotEmpty)
                 IconButton(
@@ -302,7 +342,6 @@ class _HomePageState extends State<HomePage> {
                 ),
             ],
           ),
-          drawer: const AppDrawer(),
           body: _buildBody(snapshot, contacts, existingNames, existingGroups),
           floatingActionButton: FloatingActionButton(
             onPressed: () async {

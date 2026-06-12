@@ -13,6 +13,7 @@ import '../providers/locale_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/notification_provider.dart';
 import '../services/firestore_service.dart';
+import '../services/auth_service.dart';
 import '../utils/constants.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -24,7 +25,10 @@ class SettingsPage extends StatelessWidget {
     final localeProvider = Provider.of<LocaleProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final notificationProvider = Provider.of<NotificationProvider>(context);
-    final currentLocale = localeProvider.locale ?? Localizations.localeOf(context);
+    final currentLocale =
+        localeProvider.locale ?? Localizations.localeOf(context);
+
+    final platformBrightness = MediaQuery.platformBrightnessOf(context);
 
     final hsvColor = HSVColor.fromColor(themeProvider.seedColor);
 
@@ -47,30 +51,30 @@ class SettingsPage extends StatelessWidget {
                   localeProvider.setLocale(Locale(newValue));
                 }
               },
-              items: [
+              items: const [
                 DropdownMenuItem<String>(
                   value: 'en',
-                  child: Text(l10n.english),
+                  child: Text('English'),
                 ),
                 DropdownMenuItem<String>(
                   value: 'uk',
-                  child: Text(l10n.ukrainian),
+                  child: Text('Українська'),
                 ),
                 DropdownMenuItem<String>(
                   value: 'de',
-                  child: Text(l10n.german),
+                  child: Text('Deutsch'),
                 ),
                 DropdownMenuItem<String>(
                   value: 'fr',
-                  child: Text(l10n.french),
+                  child: Text('Français'),
                 ),
                 DropdownMenuItem<String>(
                   value: 'es',
-                  child: Text(l10n.spanish),
+                  child: Text('Español'),
                 ),
                 DropdownMenuItem<String>(
                   value: 'pl',
-                  child: Text(l10n.polish),
+                  child: Text('Polski'),
                 ),
               ],
             ),
@@ -97,25 +101,35 @@ class SettingsPage extends StatelessWidget {
                     const Spacer(),
                     IconButton(
                       icon: Icon(
-                        themeProvider.themeMode == ThemeMode.light
+                        themeProvider.themeMode == ThemeMode.light ||
+                                (themeProvider.themeMode == ThemeMode.system &&
+                                    platformBrightness == Brightness.light)
                             ? Icons.light_mode
                             : Icons.light_mode_outlined,
-                        color: themeProvider.themeMode == ThemeMode.light
+                        color: themeProvider.themeMode == ThemeMode.light ||
+                                (themeProvider.themeMode == ThemeMode.system &&
+                                    platformBrightness == Brightness.light)
                             ? themeProvider.seedColor
                             : null,
                       ),
-                      onPressed: () => themeProvider.setThemeMode(ThemeMode.light),
+                      onPressed: () =>
+                          themeProvider.setThemeMode(ThemeMode.light),
                     ),
                     IconButton(
                       icon: Icon(
-                        themeProvider.themeMode == ThemeMode.dark
+                        themeProvider.themeMode == ThemeMode.dark ||
+                                (themeProvider.themeMode == ThemeMode.system &&
+                                    platformBrightness == Brightness.dark)
                             ? Icons.dark_mode
                             : Icons.dark_mode_outlined,
-                        color: themeProvider.themeMode == ThemeMode.dark
+                        color: themeProvider.themeMode == ThemeMode.dark ||
+                                (themeProvider.themeMode == ThemeMode.system &&
+                                    platformBrightness == Brightness.dark)
                             ? themeProvider.seedColor
                             : null,
                       ),
-                      onPressed: () => themeProvider.setThemeMode(ThemeMode.dark),
+                      onPressed: () =>
+                          themeProvider.setThemeMode(ThemeMode.dark),
                     ),
                   ],
                 ),
@@ -123,10 +137,12 @@ class SettingsPage extends StatelessWidget {
                 Slider(
                   value: hsvColor.hue,
                   min: 0,
-                  max: 360,
+                  max: 359,
+                  divisions: 359,
                   activeColor: themeProvider.seedColor,
                   onChanged: (double value) {
-                    final newColor = HSVColor.fromAHSV(1.0, value, 0.7, 0.9).toColor();
+                    final newColor =
+                        HSVColor.fromAHSV(1.0, value, 0.7, 0.9).toColor();
                     themeProvider.setSeedColor(newColor);
                   },
                 ),
@@ -170,6 +186,20 @@ class SettingsPage extends StatelessWidget {
             leading: const Icon(Icons.contact_phone),
             title: Text(l10n.importFromPhone),
             onTap: () => _importFromPhone(context, l10n),
+          ),
+
+          const Divider(),
+
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: Text(
+              l10n.logout,
+              style: const TextStyle(color: Colors.red),
+            ),
+            onTap: () async {
+              final authService = AuthService();
+              await authService.signOut();
+            },
           ),
 
           const SizedBox(height: 32),
