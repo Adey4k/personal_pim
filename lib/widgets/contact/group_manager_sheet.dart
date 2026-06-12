@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 
 class GroupManagerSheet extends StatelessWidget {
   final Set<String> availableGroups;
@@ -22,6 +23,7 @@ class GroupManagerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return StatefulBuilder(
       builder: (context, setModalState) {
         return Padding(
@@ -43,9 +45,9 @@ class GroupManagerSheet extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Керування групами',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Text(
+                l10n.manageGroups,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               Row(
@@ -55,7 +57,7 @@ class GroupManagerSheet extends StatelessWidget {
                       controller: groupInputController,
                       maxLength: 16,
                       decoration: InputDecoration(
-                        hintText: 'Створити нову групу...',
+                        hintText: l10n.createNewGroup,
                         counterText: '',
                         isDense: true,
                         contentPadding:
@@ -81,11 +83,11 @@ class GroupManagerSheet extends StatelessWidget {
               ),
               const Divider(height: 24),
               if (availableGroups.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24.0),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24.0),
                   child: Text(
-                    'Поки що немає жодної групи',
-                    style: TextStyle(color: Colors.grey),
+                    l10n.noGroupsYet,
+                    style: const TextStyle(color: Colors.grey),
                   ),
                 ),
               ConstrainedBox(
@@ -130,7 +132,7 @@ class GroupManagerSheet extends StatelessWidget {
                       ]),
                       trailing: IconButton(
                         icon: const Icon(Icons.edit, color: Colors.grey),
-                        tooltip: 'Налаштувати',
+                        tooltip: l10n.configure,
                         onPressed: () => onEditGroup(group, setModalState),
                       ),
                     );

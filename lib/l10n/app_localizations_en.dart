@@ -87,6 +87,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loading => 'Loading';
 
   @override
+  String get welcomeBack => 'Welcome Back!';
+
+  @override
+  String get loginSubtitle => 'Please sign in to your account';
+
+  @override
   String get login => 'Login';
 
   @override
@@ -482,4 +488,78 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deleteTodoConfirmation =>
       'Are you sure you want to delete this to-do?';
+
+  @override
+  String get invalidEmail => 'Invalid email format.';
+
+  @override
+  String get userNotFound => 'User not found.';
+
+  @override
+  String get wrongPassword => 'Wrong password.';
+
+  @override
+  String get invalidCredential => 'Invalid email or password.';
+
+  @override
+  String get emailAlreadyInUse => 'This email is already registered.';
+
+  @override
+  String get weakPassword => 'Password is too weak (minimum 6 characters).';
+
+  @override
+  String get tooManyRequests => 'Too many attempts. Try again later.';
+
+  @override
+  String get userDisabled => 'This account is disabled.';
+
+  @override
+  String get authError => 'Authentication error occurred.';
+
+  @override
+  String get googleClientIdNotFound => 'GOOGLE_CLIENT_ID not found.';
+
+  @override
+  String get authGoogleError => 'Google authentication error.';
+
+  @override
+  String get unknownLoginError => 'Unknown login error.';
+
+  @override
+  String get unknownRegistrationError => 'Unknown registration error.';
+
+  @override
+  String get userNotAuthenticated => 'User not authenticated.';
+
+  @override
+  String get unknownError => 'Unknown error.';
+
+  @override
+  String waitCooldown(int seconds) {
+    return 'Wait $seconds sec. before resending.';
+  }
+
+  @override
+  String get createAccount => 'Create Account';
+
+  @override
+  String get registerSubtitle => 'Please fill in the details to register';
+
+  @override
+  String get firstName => 'First Name';
+
+  @override
+  String get lastName => 'Last Name';
+
+  @override
+  String get dontHaveAccount => 'Don\'t have an account? Register';
+
+  @override
+  String get alreadyHaveAccount => 'Already have an account? Login';
+
+  @override
+  String get enterTextToRecognize => 'Enter text to recognize';
+
+  @override
+  String get stopRecordingToRecognize => 'Stop recording first to recognize';
 }

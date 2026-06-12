@@ -3,26 +3,32 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/locale_provider.dart';
-import 'register_page.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _RegisterPageState extends State<RegisterPage> {
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
   final AuthService _authService = AuthService();
 
   bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   @override
   void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -43,15 +49,11 @@ class _LoginPageState extends State<LoginPage> {
     final message = e.toString().replaceAll('Exception: ', '');
     switch (message) {
       case 'invalidEmail': return l10n.invalidEmail;
-      case 'userNotFound': return l10n.userNotFound;
-      case 'wrongPassword': return l10n.wrongPassword;
-      case 'invalidCredential': return l10n.invalidCredential;
+      case 'emailAlreadyInUse': return l10n.emailAlreadyInUse;
+      case 'weakPassword': return l10n.weakPassword;
       case 'tooManyRequests': return l10n.tooManyRequests;
-      case 'userDisabled': return l10n.userDisabled;
       case 'authError': return l10n.authError;
-      case 'googleClientIdNotFound': return l10n.googleClientIdNotFound;
-      case 'authGoogleError': return l10n.authGoogleError;
-      case 'unknownLoginError': return l10n.unknownLoginError;
+      case 'unknownRegistrationError': return l10n.unknownRegistrationError;
       case 'unknownError': return l10n.unknownError;
       default: return message;
     }
@@ -72,10 +74,20 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 60),
+              const SizedBox(height: 20),
+              // Back Button
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+              const SizedBox(height: 20),
+              
               // Welcome Text Section
               Text(
-                l10n.welcomeBack,
+                l10n.createAccount,
                 style: theme.textTheme.headlineLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.primary,
@@ -84,15 +96,48 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                l10n.loginSubtitle,
+                l10n.registerSubtitle,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 40),
+
+              // Name Fields Row
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _firstNameController,
+                      decoration: InputDecoration(
+                        labelText: l10n.firstName,
+                        prefixIcon: const Icon(Icons.person_outline),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      textCapitalization: TextCapitalization.words,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextField(
+                      controller: _lastNameController,
+                      decoration: InputDecoration(
+                        labelText: l10n.lastName,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      textCapitalization: TextCapitalization.words,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
               
-              // Input Fields
+              // Email Field
               TextField(
                 controller: _emailController,
                 decoration: InputDecoration(
@@ -105,6 +150,8 @@ class _LoginPageState extends State<LoginPage> {
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
+              
+              // Password Field
               TextField(
                 controller: _passwordController,
                 decoration: InputDecoration(
@@ -126,42 +173,66 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 obscureText: !_isPasswordVisible,
               ),
+              const SizedBox(height: 16),
               
-              // Forgot Password
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () async {
-                    final email = _emailController.text.trim();
-                    if (email.isEmpty) {
-                      _showSnackBar(l10n.enterEmailToResetPassword);
-                      return;
-                    }
-                    try {
-                      await _authService.sendPasswordReset(email);
-                      _showSnackBar(l10n.passwordResetEmailSent, isError: false);
-                    } catch (e) {
-                      _showSnackBar(_translateError(e, l10n));
-                    }
-                  },
-                  child: Text(l10n.forgotPassword),
+              // Confirm Password Field
+              TextField(
+                controller: _confirmPasswordController,
+                decoration: InputDecoration(
+                  labelText: l10n.confirmPassword,
+                  prefixIcon: const Icon(Icons.lock_clock_outlined),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                      });
+                    },
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
+                obscureText: !_isConfirmPasswordVisible,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
 
-              // Login Button - Higher Contrast
+              // Register Button - High Contrast
               ElevatedButton(
                 onPressed: () async {
                   final email = _emailController.text.trim();
                   final password = _passwordController.text.trim();
+                  final confirmPassword = _confirmPasswordController.text.trim();
+                  final firstName = _firstNameController.text.trim();
+                  final lastName = _lastNameController.text.trim();
 
-                  if (email.isEmpty || password.isEmpty) {
-                    _showSnackBar(l10n.pleaseEnterEmailAndPassword);
+                  if (email.isEmpty || password.isEmpty || firstName.isEmpty) {
+                    _showSnackBar(l10n.fillAllFields);
+                    return;
+                  }
+
+                  if (password != confirmPassword) {
+                    _showSnackBar(l10n.passwordsDoNotMatch);
                     return;
                   }
 
                   try {
-                    await _authService.signInWithEmail(email, password);
+                    await _authService.registerWithEmail(
+                      email: email,
+                      password: password,
+                      languageCode: currentLocaleCode,
+                      firstName: firstName,
+                      lastName: lastName,
+                    );
+                    _showSnackBar(
+                      l10n.verificationEmailSent,
+                      isError: false,
+                    );
+                    if (mounted) {
+                      Navigator.of(context).pop();
+                    }
                   } catch (e) {
                     _showSnackBar(_translateError(e, l10n));
                   }
@@ -176,62 +247,25 @@ class _LoginPageState extends State<LoginPage> {
                   elevation: 2,
                 ),
                 child: Text(
-                  l10n.login,
+                  l10n.register,
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 16),
               
-              // Register Link
+              // Login Link
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('${l10n.dontHaveAccount.split('?')[0]}?'),
+                  Text('${l10n.alreadyHaveAccount.split('?')[0]}?'),
                   TextButton(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (context) => const RegisterPage()),
-                      );
-                    },
+                    onPressed: () => Navigator.of(context).pop(),
                     child: Text(
-                      l10n.register,
+                      l10n.login,
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
-              ),
-              
-              const SizedBox(height: 24),
-              const Row(
-                children: [
-                  Expanded(child: Divider()),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text("OR"),
-                  ),
-                  Expanded(child: Divider()),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // Google Login
-              OutlinedButton.icon(
-                onPressed: () async {
-                  try {
-                    await _authService.signInWithGoogle(languageCode: currentLocaleCode);
-                  } catch (e) {
-                    _showSnackBar(_translateError(e, l10n));
-                  }
-                },
-                icon: const Icon(Icons.login), // Replace with Google icon if available
-                label: Text(l10n.loginWithGoogle),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 56),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  side: BorderSide(color: colorScheme.outline),
-                ),
               ),
               const SizedBox(height: 40),
             ],

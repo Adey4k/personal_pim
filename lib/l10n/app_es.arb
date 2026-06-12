@@ -151,5 +151,30 @@
   "medium": "Media",
   "high": "Alta",
   "todoDeleted": "Tarea eliminada",
-  "deleteTodoConfirmation": "¿Estás seguro de que quieres eliminar esta tarea?"
+  "deleteTodoConfirmation": "¿Estás seguro de que quieres eliminar esta tarea?",
+  "invalidEmail": "Formato de email no válido.",
+  "userNotFound": "Usuario no encontrado.",
+  "wrongPassword": "Contraseña incorrecta.",
+  "invalidCredential": "Email o contraseña no válidos.",
+  "emailAlreadyInUse": "Este email ya está registrado.",
+  "weakPassword": "La contraseña es demasiado débil (mínimo 6 caracteres).",
+  "tooManyRequests": "Demasiados intentos. Inténtalo de nuevo más tarde.",
+  "userDisabled": "Esta cuenta está desactivada.",
+  "authError": "Se ha producido un error de autenticación.",
+  "googleClientIdNotFound": "GOOGLE_CLIENT_ID no encontrado.",
+  "authGoogleError": "Error de autenticación de Google.",
+  "unknownLoginError": "Error de inicio de sesión desconocido.",
+  "unknownRegistrationError": "Error de registro desconocido.",
+  "userNotAuthenticated": "Usuario no autenticado.",
+  "unknownError": "Error desconocido.",
+  "waitCooldown": "Espera {seconds} seg. antes de volver a enviar.",
+  "@waitCooldown": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "enterTextToRecognize": "Introduzca texto para reconocer",
+  "stopRecordingToRecognize": "Detenga la grabación primero"
 }

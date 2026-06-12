@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 
 class SearchFilterBar extends StatelessWidget {
   final TextEditingController searchController;
@@ -24,6 +25,7 @@ class SearchFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -32,7 +34,7 @@ class SearchFilterBar extends StatelessWidget {
           child: TextField(
             controller: searchController,
             decoration: InputDecoration(
-              hintText: 'Пошук...',
+              hintText: '${l10n.search}...',
               prefixIcon: const Icon(Icons.search),
               suffixIcon: searchQuery.isNotEmpty
                   ? IconButton(
@@ -62,7 +64,7 @@ class SearchFilterBar extends StatelessWidget {
               child: Row(
                 children: [
                   ChoiceChip(
-                    label: const Text('Всі'),
+                    label: Text(l10n.all),
                     selected: selectedGroupFilter == null,
                     onSelected: (bool selected) {
                       if (selected) onGroupFilterChanged(null);

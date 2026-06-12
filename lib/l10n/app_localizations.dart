@@ -256,6 +256,18 @@ abstract class AppLocalizations {
   /// **'Loading'**
   String get loading;
 
+  /// No description provided for @welcomeBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome Back!'**
+  String get welcomeBack;
+
+  /// No description provided for @loginSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in to your account'**
+  String get loginSubtitle;
+
   /// No description provided for @login.
   ///
   /// In en, this message translates to:
@@ -1023,6 +1035,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Are you sure you want to delete this to-do?'**
   String get deleteTodoConfirmation;
+
+  /// No description provided for @invalidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email format.'**
+  String get invalidEmail;
+
+  /// No description provided for @userNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'User not found.'**
+  String get userNotFound;
+
+  /// No description provided for @wrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong password.'**
+  String get wrongPassword;
+
+  /// No description provided for @invalidCredential.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email or password.'**
+  String get invalidCredential;
+
+  /// No description provided for @emailAlreadyInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'This email is already registered.'**
+  String get emailAlreadyInUse;
+
+  /// No description provided for @weakPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password is too weak (minimum 6 characters).'**
+  String get weakPassword;
+
+  /// No description provided for @tooManyRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Try again later.'**
+  String get tooManyRequests;
+
+  /// No description provided for @userDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'This account is disabled.'**
+  String get userDisabled;
+
+  /// No description provided for @authError.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication error occurred.'**
+  String get authError;
+
+  /// No description provided for @googleClientIdNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'GOOGLE_CLIENT_ID not found.'**
+  String get googleClientIdNotFound;
+
+  /// No description provided for @authGoogleError.
+  ///
+  /// In en, this message translates to:
+  /// **'Google authentication error.'**
+  String get authGoogleError;
+
+  /// No description provided for @unknownLoginError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown login error.'**
+  String get unknownLoginError;
+
+  /// No description provided for @unknownRegistrationError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown registration error.'**
+  String get unknownRegistrationError;
+
+  /// No description provided for @userNotAuthenticated.
+  ///
+  /// In en, this message translates to:
+  /// **'User not authenticated.'**
+  String get userNotAuthenticated;
+
+  /// No description provided for @unknownError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown error.'**
+  String get unknownError;
+
+  /// No description provided for @waitCooldown.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait {seconds} sec. before resending.'**
+  String waitCooldown(int seconds);
+
+  /// No description provided for @createAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Account'**
+  String get createAccount;
+
+  /// No description provided for @registerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Please fill in the details to register'**
+  String get registerSubtitle;
+
+  /// No description provided for @firstName.
+  ///
+  /// In en, this message translates to:
+  /// **'First Name'**
+  String get firstName;
+
+  /// No description provided for @lastName.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Name'**
+  String get lastName;
+
+  /// No description provided for @dontHaveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t have an account? Register'**
+  String get dontHaveAccount;
+
+  /// No description provided for @alreadyHaveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account? Login'**
+  String get alreadyHaveAccount;
+
+  /// No description provided for @enterTextToRecognize.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter text to recognize'**
+  String get enterTextToRecognize;
+
+  /// No description provided for @stopRecordingToRecognize.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop recording first to recognize'**
+  String get stopRecordingToRecognize;
 }
 
 class _AppLocalizationsDelegate

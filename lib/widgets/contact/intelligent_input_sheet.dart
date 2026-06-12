@@ -191,21 +191,39 @@ class _IntelligentInputSheetState extends State<IntelligentInputSheet> with Sing
             
             const SizedBox(height: 32),
             
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                elevation: 0,
-              ),
-              onPressed: widget.aiInputController.text.trim().isEmpty || widget.isListening
-                  ? null
-                  : () => widget.onProcessInput(widget.aiInputController.text.trim()),
-              child: Text(
-                l10n.recognize,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
+                  ),
+                  onPressed: widget.aiInputController.text.trim().isEmpty || widget.isListening
+                      ? null
+                      : () => widget.onProcessInput(widget.aiInputController.text.trim()),
+                  child: Text(
+                    l10n.recognize,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                if (widget.aiInputController.text.trim().isEmpty || widget.isListening)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      widget.isListening ? l10n.stopRecordingToRecognize : l10n.enterTextToRecognize,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: theme.colorScheme.error.withValues(alpha: 0.8),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ]
         ],

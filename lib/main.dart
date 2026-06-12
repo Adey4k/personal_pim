@@ -12,6 +12,7 @@ import 'utils/env.dart';
 import 'providers/locale_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/notification_provider.dart';
+import 'services/notification_service.dart';
 import 'l10n/app_localizations.dart';
 
 void main() async {
@@ -32,6 +33,8 @@ void main() async {
 
   final localeProvider = LocaleProvider();
   await localeProvider.loadLocale(WidgetsBinding.instance.platformDispatcher.locale);
+
+  await NotificationService().init();
 
   runApp(
     MultiProvider(

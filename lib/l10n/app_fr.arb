@@ -151,5 +151,30 @@
   "medium": "Moyenne",
   "high": "Haute",
   "todoDeleted": "Tâche supprimée",
-  "deleteTodoConfirmation": "Êtes-vous sûr de vouloir supprimer cette tâche ?"
+  "deleteTodoConfirmation": "Êtes-vous sûr de vouloir supprimer cette tâche?",
+  "invalidEmail": "Format d'email invalide.",
+  "userNotFound": "Utilisateur non trouvé.",
+  "wrongPassword": "Mot de passe incorrect.",
+  "invalidCredential": "Email ou mot de passe invalide.",
+  "emailAlreadyInUse": "Cet email est déjà enregistré.",
+  "weakPassword": "Le mot de passe est trop faible (minimum 6 caractères).",
+  "tooManyRequests": "Trop de tentatives. Réessayez plus tard.",
+  "userDisabled": "Ce compte est désactivé.",
+  "authError": "Une erreur d'authentification s'est produite.",
+  "googleClientIdNotFound": "GOOGLE_CLIENT_ID non trouvé.",
+  "authGoogleError": "Erreur d'authentification Google.",
+  "unknownLoginError": "Erreur de connexion inconnue.",
+  "unknownRegistrationError": "Erreur d'inscription inconnue.",
+  "userNotAuthenticated": "Utilisateur non authentifié.",
+  "unknownError": "Erreur inconnue.",
+  "waitCooldown": "Attendez {seconds} sec. avant de renvoyer.",
+  "@waitCooldown": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "enterTextToRecognize": "Entrez le texte à reconnaître",
+  "stopRecordingToRecognize": "Arrêtez d'abord l'enregistrement"
 }

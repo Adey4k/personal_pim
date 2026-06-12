@@ -24,6 +24,8 @@
   "noName": "Без імені",
   "error": "Помилка",
   "loading": "Завантаження",
+  "welcomeBack": "З поверненням!",
+  "loginSubtitle": "Будь ласка, увійдіть у свій акаунт",
   "login": "Увійти",
   "loginTitle": "Вхід у застосунок",
   "password": "Пароль",
@@ -172,5 +174,36 @@
   "medium": "Середній",
   "high": "Високий",
   "todoDeleted": "Завдання видалено",
-  "deleteTodoConfirmation": "Ви впевнені, що хочете видалити це завдання?"
+  "deleteTodoConfirmation": "Ви впевнені, що хочете видалити це завдання?",
+  "invalidEmail": "Некоректний формат email.",
+  "userNotFound": "Користувача не знайдено.",
+  "wrongPassword": "Неправильний пароль.",
+  "invalidCredential": "Неправильний email або пароль.",
+  "emailAlreadyInUse": "Цей email вже зареєстровано.",
+  "weakPassword": "Пароль занадто простий (мінімум 6 символів).",
+  "tooManyRequests": "Занадто багато спроб. Спробуйте пізніше.",
+  "userDisabled": "Цей акаунт заблоковано.",
+  "authError": "Сталася помилка авторизації.",
+  "googleClientIdNotFound": "GOOGLE_CLIENT_ID не знайдено.",
+  "authGoogleError": "Помилка авторизації Google.",
+  "unknownLoginError": "Невідома помилка входу.",
+  "unknownRegistrationError": "Невідома помилка реєстрації.",
+  "userNotAuthenticated": "Користувач не авторизований.",
+  "unknownError": "Невідома помилка.",
+  "waitCooldown": "Зачекайте {seconds} сек. перед повторною відправкою.",
+  "@waitCooldown": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "createAccount": "Створити акаунт",
+  "registerSubtitle": "Будь ласка, заповніть дані для реєстрації",
+  "firstName": "Ім'я",
+  "lastName": "Прізвище",
+  "dontHaveAccount": "Немає акаунта? Зареєструватися",
+  "alreadyHaveAccount": "Вже є акаунт? Увійти",
+  "enterTextToRecognize": "Введіть текст для розпізнавання",
+  "stopRecordingToRecognize": "Спершу зупиніть запис"
 }

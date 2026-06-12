@@ -87,6 +87,12 @@ class AppLocalizationsPl extends AppLocalizations {
   String get loading => 'Ładowanie...';
 
   @override
+  String get welcomeBack => 'Welcome Back!';
+
+  @override
+  String get loginSubtitle => 'Please sign in to your account';
+
+  @override
   String get login => 'Zaloguj się';
 
   @override
@@ -487,4 +493,78 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get deleteTodoConfirmation => 'Czy na pewno chcesz usunąć to zadanie?';
+
+  @override
+  String get invalidEmail => 'Nieprawidłowy format e-mail.';
+
+  @override
+  String get userNotFound => 'Użytkownik nie został znaleziony.';
+
+  @override
+  String get wrongPassword => 'Błędne hasło.';
+
+  @override
+  String get invalidCredential => 'Nieprawidłowy e-mail lub hasło.';
+
+  @override
+  String get emailAlreadyInUse => 'Ten e-mail jest вже zarejestrowany.';
+
+  @override
+  String get weakPassword => 'Hasło jest za słabe (minimum 6 znaków).';
+
+  @override
+  String get tooManyRequests => 'Zbyt wiele prób. Spróbuj ponownie później.';
+
+  @override
+  String get userDisabled => 'To konto zostało zablokowane.';
+
+  @override
+  String get authError => 'Wystąpił błąd autoryzacji.';
+
+  @override
+  String get googleClientIdNotFound => 'Nie znaleziono GOOGLE_CLIENT_ID.';
+
+  @override
+  String get authGoogleError => 'Błąd autoryzacji Google.';
+
+  @override
+  String get unknownLoginError => 'Nieznany błąd logowania.';
+
+  @override
+  String get unknownRegistrationError => 'Nieznany błąd rejestracji.';
+
+  @override
+  String get userNotAuthenticated => 'Użytkownik nie jest zalogowany.';
+
+  @override
+  String get unknownError => 'Nieznany błąd.';
+
+  @override
+  String waitCooldown(int seconds) {
+    return 'Odczekaj $seconds sek. przed ponownym wysłaniem.';
+  }
+
+  @override
+  String get createAccount => 'Create Account';
+
+  @override
+  String get registerSubtitle => 'Please fill in the details to register';
+
+  @override
+  String get firstName => 'First Name';
+
+  @override
+  String get lastName => 'Last Name';
+
+  @override
+  String get dontHaveAccount => 'Don\'t have an account? Register';
+
+  @override
+  String get alreadyHaveAccount => 'Already have an account? Login';
+
+  @override
+  String get enterTextToRecognize => 'Wprowadź tekst do rozpoznania';
+
+  @override
+  String get stopRecordingToRecognize => 'Najpierw zatrzymaj nagrywanie';
 }

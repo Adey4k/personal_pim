@@ -1,17 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:personal_pim/providers/notification_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 import 'notification_provider_test.mocks.dart';
 
 @GenerateMocks([SharedPreferences])
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late NotificationProvider notificationProvider;
 
   setUp(() {
+    const MethodChannel('dexterous.com/flutter/local_notifications')
+        .setMockMethodCallHandler((MethodCall methodCall) async {
+      return null;
+    });
+
+    tz.initializeTimeZones();
     SharedPreferences.setMockInitialValues({});
     notificationProvider = NotificationProvider();
   });

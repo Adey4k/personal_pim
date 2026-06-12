@@ -86,6 +86,12 @@ class AppLocalizationsUk extends AppLocalizations {
   String get loading => 'Завантаження';
 
   @override
+  String get welcomeBack => 'З поверненням!';
+
+  @override
+  String get loginSubtitle => 'Будь ласка, увійдіть у свій акаунт';
+
+  @override
   String get login => 'Увійти';
 
   @override
@@ -487,4 +493,78 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get deleteTodoConfirmation =>
       'Ви впевнені, що хочете видалити це завдання?';
+
+  @override
+  String get invalidEmail => 'Некоректний формат email.';
+
+  @override
+  String get userNotFound => 'Користувача не знайдено.';
+
+  @override
+  String get wrongPassword => 'Неправильний пароль.';
+
+  @override
+  String get invalidCredential => 'Неправильний email або пароль.';
+
+  @override
+  String get emailAlreadyInUse => 'Цей email вже зареєстровано.';
+
+  @override
+  String get weakPassword => 'Пароль занадто простий (мінімум 6 символів).';
+
+  @override
+  String get tooManyRequests => 'Занадто багато спроб. Спробуйте пізніше.';
+
+  @override
+  String get userDisabled => 'Цей акаунт заблоковано.';
+
+  @override
+  String get authError => 'Сталася помилка авторизації.';
+
+  @override
+  String get googleClientIdNotFound => 'GOOGLE_CLIENT_ID не знайдено.';
+
+  @override
+  String get authGoogleError => 'Помилка авторизації Google.';
+
+  @override
+  String get unknownLoginError => 'Невідома помилка входу.';
+
+  @override
+  String get unknownRegistrationError => 'Невідома помилка реєстрації.';
+
+  @override
+  String get userNotAuthenticated => 'Користувач не авторизований.';
+
+  @override
+  String get unknownError => 'Невідома помилка.';
+
+  @override
+  String waitCooldown(int seconds) {
+    return 'Зачекайте $seconds сек. перед повторною відправкою.';
+  }
+
+  @override
+  String get createAccount => 'Створити акаунт';
+
+  @override
+  String get registerSubtitle => 'Будь ласка, заповніть дані для реєстрації';
+
+  @override
+  String get firstName => 'Ім\'я';
+
+  @override
+  String get lastName => 'Прізвище';
+
+  @override
+  String get dontHaveAccount => 'Немає акаунта? Зареєструватися';
+
+  @override
+  String get alreadyHaveAccount => 'Вже є акаунт? Увійти';
+
+  @override
+  String get enterTextToRecognize => 'Введіть текст для розпізнавання';
+
+  @override
+  String get stopRecordingToRecognize => 'Спершу зупиніть запис';
 }

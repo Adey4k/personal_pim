@@ -5,6 +5,13 @@ import '../utils/env.dart';
 import 'firestore_service.dart';
 import 'dart:io';
 
+class CooldownException implements Exception {
+  final int remainingSeconds;
+  CooldownException(this.remainingSeconds);
+  @override
+  String toString() => remainingSeconds.toString();
+}
+
 class AuthService {
   static final AuthService _instance = AuthService._internal();
 
@@ -39,22 +46,22 @@ class AuthService {
       final difference = DateTime.now().difference(lastSent).inSeconds;
       if (difference < _cooldownSeconds) {
         final remaining = _cooldownSeconds - difference;
-        throw Exception('Зачекайте $remaining сек. перед повторною відправкою.');
+        throw CooldownException(remaining);
       }
     }
   }
 
   String _getAuthErrorMessage(FirebaseAuthException e) {
     switch (e.code) {
-      case 'invalid-email': return 'Некоректний формат email.';
-      case 'user-not-found': return 'Користувача не знайдено.';
-      case 'wrong-password': return 'Неправильний пароль.';
-      case 'invalid-credential': return 'Неправильний email або пароль.';
-      case 'email-already-in-use': return 'Цей email вже зареєстровано.';
-      case 'weak-password': return 'Пароль занадто простий (мінімум 6 символів).';
-      case 'too-many-requests': return 'Занадто багато спроб. Спробуйте пізніше.';
-      case 'user-disabled': return 'Цей акаунт заблоковано.';
-      default: return e.message ?? 'Сталася помилка авторизації.';
+      case 'invalid-email': return 'invalidEmail';
+      case 'user-not-found': return 'userNotFound';
+      case 'wrong-password': return 'wrongPassword';
+      case 'invalid-credential': return 'invalidCredential';
+      case 'email-already-in-use': return 'emailAlreadyInUse';
+      case 'weak-password': return 'weakPassword';
+      case 'too-many-requests': return 'tooManyRequests';
+      case 'user-disabled': return 'userDisabled';
+      default: return 'authError';
     }
   }
 
@@ -63,7 +70,7 @@ class AuthService {
   Future<UserCredential?> signInWithGoogle({String? languageCode}) async {
     try {
       if (_googleClientId.isEmpty) {
-        throw Exception("GOOGLE_CLIENT_ID не знайдено.");
+        throw Exception("googleClientIdNotFound");
       }
 
       final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
@@ -84,7 +91,8 @@ class AuthService {
       return userCredential;
     } catch (e) {
       debugPrint("Помилка входу через Google: $e");
-      throw Exception("Помилка авторизації Google.");
+      if (e is Exception && e.toString().contains('googleClientIdNotFound')) rethrow;
+      throw Exception("authGoogleError");
     }
   }
 
@@ -95,24 +103,24 @@ class AuthService {
         password: password,
       );
 
-      final user = credential.user;
-      if (user != null && !user.emailVerified) {
-        await _auth.signOut();
-        throw Exception("Email не підтверджено. Перевірте вашу пошту.");
-      }
-
       return credential;
     } on FirebaseAuthException catch (e) {
       throw Exception(_getAuthErrorMessage(e));
-    } on Exception catch (e) {
+    } on Exception {
       rethrow;
     } catch (e) {
       debugPrint("AuthService Error: $e");
-      throw Exception("Невідома помилка входу.");
+      throw Exception("unknownLoginError");
     }
   }
 
-  Future<void> registerWithEmail(String email, String password, String languageCode) async {
+  Future<void> registerWithEmail({
+    required String email,
+    required String password,
+    required String languageCode,
+    String? firstName,
+    String? lastName,
+  }) async {
     try {
       _checkCooldown(_lastEmailVerification);
 
@@ -122,23 +130,28 @@ class AuthService {
       );
 
       if (credential.user != null) {
+        if (firstName != null || lastName != null) {
+          final displayName = [firstName, lastName]
+              .where((s) => s != null && s.isNotEmpty)
+              .join(' ');
+          await credential.user!.updateDisplayName(displayName);
+        }
         await _dbService.initializeUserDatabase(languageCode);
       }
 
       await credential.user?.sendEmailVerification();
       _lastEmailVerification = DateTime.now();
-      await _auth.signOut();
     } on FirebaseAuthException catch (e) {
       throw Exception(_getAuthErrorMessage(e));
     } catch (e) {
-      if (e.toString().contains('Зачекайте')) rethrow;
-      throw Exception("Невідома помилка реєстрації.");
+      if (e is CooldownException) rethrow;
+      throw Exception("unknownRegistrationError");
     }
   }
 
   Future<void> resendVerificationEmail() async {
     final user = _auth.currentUser;
-    if (user == null) throw Exception("Користувач не авторизований.");
+    if (user == null) throw Exception("userNotAuthenticated");
 
     _checkCooldown(_lastEmailVerification);
 
@@ -148,7 +161,8 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       throw Exception(_getAuthErrorMessage(e));
     } catch (e) {
-      throw Exception("Невідома помилка.");
+      if (e is CooldownException) rethrow;
+      throw Exception("unknownError");
     }
   }
 
@@ -161,8 +175,8 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       throw Exception(_getAuthErrorMessage(e));
     } catch (e) {
-      if (e.toString().contains('Зачекайте')) rethrow;
-      throw Exception("Невідома помилка.");
+      if (e is CooldownException) rethrow;
+      throw Exception("unknownError");
     }
   }
 

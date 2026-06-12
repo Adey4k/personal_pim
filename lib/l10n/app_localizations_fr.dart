@@ -87,6 +87,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get loading => 'Chargement...';
 
   @override
+  String get welcomeBack => 'Welcome Back!';
+
+  @override
+  String get loginSubtitle => 'Please sign in to your account';
+
+  @override
   String get login => 'Connexion';
 
   @override
@@ -489,5 +495,80 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get deleteTodoConfirmation =>
-      'Êtes-vous sûr de vouloir supprimer cette tâche ?';
+      'Êtes-vous sûr de vouloir supprimer cette tâche?';
+
+  @override
+  String get invalidEmail => 'Format d\'email invalide.';
+
+  @override
+  String get userNotFound => 'Utilisateur non trouvé.';
+
+  @override
+  String get wrongPassword => 'Mot de passe incorrect.';
+
+  @override
+  String get invalidCredential => 'Email ou mot de passe invalide.';
+
+  @override
+  String get emailAlreadyInUse => 'Cet email est déjà enregistré.';
+
+  @override
+  String get weakPassword =>
+      'Le mot de passe est trop faible (minimum 6 caractères).';
+
+  @override
+  String get tooManyRequests => 'Trop de tentatives. Réessayez plus tard.';
+
+  @override
+  String get userDisabled => 'Ce compte est désactivé.';
+
+  @override
+  String get authError => 'Une erreur d\'authentification s\'est produite.';
+
+  @override
+  String get googleClientIdNotFound => 'GOOGLE_CLIENT_ID non trouvé.';
+
+  @override
+  String get authGoogleError => 'Erreur d\'authentification Google.';
+
+  @override
+  String get unknownLoginError => 'Erreur de connexion inconnue.';
+
+  @override
+  String get unknownRegistrationError => 'Erreur d\'inscription inconnue.';
+
+  @override
+  String get userNotAuthenticated => 'Utilisateur non authentifié.';
+
+  @override
+  String get unknownError => 'Erreur inconnue.';
+
+  @override
+  String waitCooldown(int seconds) {
+    return 'Attendez $seconds sec. avant de renvoyer.';
+  }
+
+  @override
+  String get createAccount => 'Create Account';
+
+  @override
+  String get registerSubtitle => 'Please fill in the details to register';
+
+  @override
+  String get firstName => 'First Name';
+
+  @override
+  String get lastName => 'Last Name';
+
+  @override
+  String get dontHaveAccount => 'Don\'t have an account? Register';
+
+  @override
+  String get alreadyHaveAccount => 'Already have an account? Login';
+
+  @override
+  String get enterTextToRecognize => 'Entrez le texte à reconnaître';
+
+  @override
+  String get stopRecordingToRecognize => 'Arrêtez d\'abord l\'enregistrement';
 }
