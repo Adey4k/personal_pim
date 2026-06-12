@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:uuid/uuid.dart';
 import 'package:provider/provider.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:personal_pim/services/gemini_service.dart';
 import 'package:personal_pim/services/speech_service.dart';
 import '../models/contact.dart';
-import '../models/ai_parsed_contact.dart';
 import '../services/firestore_service.dart';
 import '../utils/constants.dart';
 import '../utils/validators.dart';
