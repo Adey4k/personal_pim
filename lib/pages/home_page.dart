@@ -46,21 +46,21 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     // Getting firestore service from provider safely in initState
     _contactsStream = Provider.of<FirestoreService>(context, listen: false).getContactsStream();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startTutorialIfNeeded();
-    });
   }
 
-  void _startTutorialIfNeeded() {
+  void _startTutorialIfNeeded() async {
     final tutorialProvider = Provider.of<TutorialProvider>(context, listen: false);
     if (!tutorialProvider.isHomeTutorialShown) {
-      ShowCaseWidget.of(context).startShowCase([
-        _tableKey,
-        _addKey,
-        _calendarKey,
-        _settingsKey,
-      ]);
+      try {
+        ShowCaseWidget.of(context).startShowCase([
+          _tableKey,
+          _addKey,
+          _calendarKey,
+          _settingsKey,
+        ]);
+      } catch (e) {
+        // Skip if keys aren't mounted
+      }
       tutorialProvider.markHomeTutorialAsShown();
     }
   }
@@ -208,6 +208,7 @@ class _HomePageState extends State<HomePage> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             provider.syncColumnsWithData(contacts);
             HomeWidgetService.updateBirthdays(contacts);
+            _startTutorialIfNeeded();
           });
         }
 

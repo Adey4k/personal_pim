@@ -11,11 +11,9 @@ class NotificationProvider extends ChangeNotifier {
 
   TimeOfDay get reminderTime => _reminderTime;
 
-  NotificationProvider() {
-    _loadSettings();
-  }
+  NotificationProvider();
 
-  Future<void> _loadSettings() async {
+  Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     
     final hour = prefs.getInt(_timeHourKey);

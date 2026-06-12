@@ -31,8 +31,6 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Do not await this, as it can block runApp for seconds on some Android devices
-  // due to Google Api Manager timeouts.
   GoogleSignIn.instance.initialize(
     serverClientId: Env.googleClientId,
   );
@@ -45,6 +43,15 @@ void main() async {
   final localeProvider = LocaleProvider();
   await localeProvider.loadLocale(WidgetsBinding.instance.platformDispatcher.locale);
 
+  final themeProvider = ThemeProvider();
+  await themeProvider.init();
+
+  final notificationProvider = NotificationProvider();
+  await notificationProvider.init();
+
+  final tutorialProvider = TutorialProvider();
+  await tutorialProvider.init();
+
   await NotificationService().init();
 
   HomeWidget.registerInteractivityCallback(interactiveCallback);
@@ -53,9 +60,9 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: localeProvider),
-        ChangeNotifierProvider(create: (context) => ThemeProvider()),
-        ChangeNotifierProvider(create: (context) => NotificationProvider()),
-        ChangeNotifierProvider(create: (context) => TutorialProvider()),
+        ChangeNotifierProvider.value(value: themeProvider),
+        ChangeNotifierProvider.value(value: notificationProvider),
+        ChangeNotifierProvider.value(value: tutorialProvider),
         ChangeNotifierProvider(create: (context) => ContactsProvider()),
         Provider<FirestoreService>(create: (context) => FirestoreService()),
         Provider<GeminiService>(create: (context) => GeminiService()),

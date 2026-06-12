@@ -11,11 +11,9 @@ class ThemeProvider extends ChangeNotifier {
   ThemeMode get themeMode => _themeMode;
   Color get seedColor => _seedColor;
 
-  ThemeProvider() {
-    _loadSettings();
-  }
+  ThemeProvider();
 
-  Future<void> _loadSettings() async {
+  Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     
     final modeIndex = prefs.getInt(_modeKey);

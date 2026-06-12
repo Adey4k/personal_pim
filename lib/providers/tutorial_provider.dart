@@ -11,11 +11,9 @@ class TutorialProvider extends ChangeNotifier {
   bool get isHomeTutorialShown => _isHomeTutorialShown;
   bool get isContactTutorialShown => _isContactTutorialShown;
 
-  TutorialProvider() {
-    _loadTutorialState();
-  }
+  TutorialProvider();
 
-  Future<void> _loadTutorialState() async {
+  Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     _isHomeTutorialShown = prefs.getBool(_homeKey) ?? false;
     _isContactTutorialShown = prefs.getBool(_contactKey) ?? false;
