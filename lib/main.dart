@@ -31,7 +31,9 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  await GoogleSignIn.instance.initialize(
+  // Do not await this, as it can block runApp for seconds on some Android devices
+  // due to Google Api Manager timeouts.
+  GoogleSignIn.instance.initialize(
     serverClientId: Env.googleClientId,
   );
 
@@ -153,7 +155,6 @@ class AppNavigationHandler extends StatefulWidget {
 
 class _AppNavigationHandlerState extends State<AppNavigationHandler>
     with WidgetsBindingObserver {
-  static const _channel = MethodChannel('com.ladikov.personal_pim/deeplink');
   bool _initialUriHandled = false;
 
   @override
@@ -162,7 +163,6 @@ class _AppNavigationHandlerState extends State<AppNavigationHandler>
     WidgetsBinding.instance.addObserver(this);
     HomeWidget.setAppGroupId('group.com.ladikov.personal_pim');
     _checkLaunchedFromWidget();
-    _checkInitialIntent();
   }
 
   @override
@@ -173,9 +173,7 @@ class _AppNavigationHandlerState extends State<AppNavigationHandler>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _checkNewIntent();
-    }
+    // Rely on HomeWidget.widgetClicked stream to handle deep links
   }
 
   void _checkLaunchedFromWidget() async {
@@ -185,32 +183,6 @@ class _AppNavigationHandlerState extends State<AppNavigationHandler>
       _initialUriHandled = true;
     }
     HomeWidget.widgetClicked.listen(_handleUri);
-  }
-
-  /// Check the initial intent that launched the app (for deep links via ACTION_VIEW)
-  void _checkInitialIntent() async {
-    if (_initialUriHandled) return;
-    try {
-      final String? uriString = await _channel.invokeMethod('getInitialUri');
-      if (uriString != null && uriString.isNotEmpty) {
-        _handleUri(Uri.tryParse(uriString));
-        _initialUriHandled = true;
-      }
-    } catch (_) {
-      // Platform channel not available — ignore
-    }
-  }
-
-  /// Check for new intents when app is resumed from background
-  void _checkNewIntent() async {
-    try {
-      final String? uriString = await _channel.invokeMethod('getLatestUri');
-      if (uriString != null && uriString.isNotEmpty) {
-        _handleUri(Uri.tryParse(uriString));
-      }
-    } catch (_) {
-      // Platform channel not available — ignore
-    }
   }
 
   void _handleUri(Uri? uri) {

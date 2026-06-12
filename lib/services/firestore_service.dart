@@ -233,7 +233,6 @@ class FirestoreService {
       final contacts = snapshot.docs.map((doc) {
         return Contact.fromMap(doc.data() as Map<String, dynamic>, doc.id);
       }).toList();
-      HomeWidgetService.updateBirthdays(contacts);
       return contacts;
     });
   }

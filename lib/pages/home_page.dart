@@ -7,6 +7,9 @@ import '../widgets/home/search_filter_bar.dart';
 import '../widgets/home/column_settings_sheet.dart';
 import '../widgets/home/contact_table.dart';
 import 'contact_page.dart';
+import '../services/gemini_service.dart';
+import '../services/home_widget_service.dart';
+import '../services/speech_service.dart';
 import '../services/firestore_service.dart';
 import '../models/contact.dart';
 import '../utils/constants.dart';
@@ -201,9 +204,12 @@ class _HomePageState extends State<HomePage> {
         final provider = Provider.of<ContactsProvider>(context, listen: false);
         
         // Use post-frame callback to avoid updating state during build
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          provider.syncColumnsWithData(contacts);
-        });
+        if (snapshot.connectionState != ConnectionState.waiting) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            provider.syncColumnsWithData(contacts);
+            HomeWidgetService.updateBirthdays(contacts);
+          });
+        }
 
         final existingNames = contacts.map((c) => c.name).toSet();
 
