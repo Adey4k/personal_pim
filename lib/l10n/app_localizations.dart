@@ -1179,6 +1179,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Stop recording first to recognize'**
   String get stopRecordingToRecognize;
+
+  /// No description provided for @onboardingHomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Personal PIM!'**
+  String get onboardingHomeTitle;
+
+  /// No description provided for @onboardingHomeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage your contacts here. You can drag and drop rows to change their order, and clicking on a column header will sort the list by that field.'**
+  String get onboardingHomeDesc;
+
+  /// No description provided for @onboardingAddContactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Contacts'**
+  String get onboardingAddContactTitle;
+
+  /// No description provided for @onboardingAddContactDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap here to add a new contact manually or using AI.'**
+  String get onboardingAddContactDesc;
+
+  /// No description provided for @onboardingCalendarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar & Tasks'**
+  String get onboardingCalendarTitle;
+
+  /// No description provided for @onboardingCalendarDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'View birthdays and your task list here.'**
+  String get onboardingCalendarDesc;
+
+  /// No description provided for @onboardingSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'App Settings'**
+  String get onboardingSettingsTitle;
+
+  /// No description provided for @onboardingSettingsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize the app, import/export data. Don\'t forget that you can add widgets to your home screen!'**
+  String get onboardingSettingsDesc;
+
+  /// No description provided for @onboardingIntelligentInputTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Intelligent Input'**
+  String get onboardingIntelligentInputTitle;
+
+  /// No description provided for @onboardingIntelligentInputDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste any text about a contact (e.g., a message from a messenger), and AI will try to find fields and fill them automatically.'**
+  String get onboardingIntelligentInputDesc;
+
+  /// No description provided for @onboardingWidgetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Widgets'**
+  String get onboardingWidgetTitle;
+
+  /// No description provided for @onboardingWidgetDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t forget to add our widget to your home screen to see upcoming birthdays!'**
+  String get onboardingWidgetDesc;
+
+  /// No description provided for @onboardingContactMeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Support'**
+  String get onboardingContactMeTitle;
+
+  /// No description provided for @onboardingContactMeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'ladikovmax@gmail.com'**
+  String get onboardingContactMeDesc;
 }
 
 class _AppLocalizationsDelegate

@@ -176,5 +176,19 @@
     }
   },
   "enterTextToRecognize": "Wprowadź tekst do rozpoznania",
-  "stopRecordingToRecognize": "Najpierw zatrzymaj nagrywanie"
+  "stopRecordingToRecognize": "Najpierw zatrzymaj nagrywanie",
+  "onboardingHomeTitle": "Witaj w Personal PIM!",
+  "onboardingHomeDesc": "Zarządzaj swoimi kontaktami tutaj. Możesz przeciągać i upuszczać wiersze, aby zmienić ich kolejność, a kliknięcie nagłówka kolumny posortuje listę według tego pola.",
+  "onboardingAddContactTitle": "Dodaj kontakty",
+  "onboardingAddContactDesc": "Dotknij tutaj, aby dodać nowy kontakt ręcznie lub za pomocą AI.",
+  "onboardingCalendarTitle": "Kalendarz i zadania",
+  "onboardingCalendarDesc": "Przeglądaj tutaj urodziny i listę swoich zadań.",
+  "onboardingSettingsTitle": "Ustawienia aplikacji",
+  "onboardingSettingsDesc": "Dostosuj aplikację, importuj/eksportuj dane i znajdź informacje o widżetach.",
+  "onboardingIntelligentInputTitle": "Inteligentne wprowadzanie",
+  "onboardingIntelligentInputDesc": "Wklej dowolny tekst o kontakcie (np. wiadomość z komunikatora), а SI spróbuje znaleźć pola i wypełnić je automatycznie.",
+  "onboardingWidgetTitle": "Dodaj widżety",
+  "onboardingWidgetDesc": "Nie zapomnij dodać naszego widżetu do ekranu głównego, aby widzieć nadchodzące urodziny!",
+  "onboardingContactMeTitle": "Kontakt z pomocą",
+  "onboardingContactMeDesc": "Masz propozycje? Skontaktuj się ze mną pod adresem ladikovmax@gmail.com"
 }

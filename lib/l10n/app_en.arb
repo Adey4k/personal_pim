@@ -219,5 +219,19 @@
   "dontHaveAccount": "Don't have an account? Register",
   "alreadyHaveAccount": "Already have an account? Login",
   "enterTextToRecognize": "Enter text to recognize",
-  "stopRecordingToRecognize": "Stop recording first to recognize"
+  "stopRecordingToRecognize": "Stop recording first to recognize",
+  "onboardingHomeTitle": "Welcome to Personal PIM!",
+  "onboardingHomeDesc": "Manage your contacts here. You can drag and drop rows to change their order, and clicking on a column header will sort the list by that field.",
+  "onboardingAddContactTitle": "Add Contacts",
+  "onboardingAddContactDesc": "Tap here to add a new contact manually or using AI.",
+  "onboardingCalendarTitle": "Calendar & Tasks",
+  "onboardingCalendarDesc": "View birthdays and your task list here.",
+  "onboardingSettingsTitle": "App Settings",
+  "onboardingSettingsDesc": "Customize the app, import/export data. Don't forget that you can add widgets to your home screen!",
+  "onboardingIntelligentInputTitle": "Intelligent Input",
+  "onboardingIntelligentInputDesc": "Paste any text about a contact (e.g., a message from a messenger), and AI will try to find fields and fill them automatically.",
+  "onboardingWidgetTitle": "Add Widgets",
+  "onboardingWidgetDesc": "Don't forget to add our widget to your home screen to see upcoming birthdays!",
+  "onboardingContactMeTitle": "Contact Support",
+  "onboardingContactMeDesc": "ladikovmax@gmail.com"
 }

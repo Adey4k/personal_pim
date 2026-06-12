@@ -139,12 +139,14 @@ class DynamicFieldWidget extends StatelessWidget {
         return TextField(
           controller: field.valueController,
           keyboardType: TextInputType.phone,
+          maxLength: 13,
           decoration: const InputDecoration(
             hintText: '0',
             hintStyle: TextStyle(color: Colors.grey),
             border: InputBorder.none,
             isDense: true,
             contentPadding: EdgeInsets.symmetric(vertical: 8.0),
+            counterText: "",
           ),
         );
       case FieldType.date:
@@ -254,12 +256,14 @@ class DynamicFieldWidget extends StatelessWidget {
           keyboardType: TextInputType.multiline,
           minLines: 1,
           maxLines: 4,
+          maxLength: 64,
           decoration: InputDecoration(
             hintText: l10n.textType,
             hintStyle: const TextStyle(color: Colors.grey),
             border: InputBorder.none,
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(vertical: 8.0),
+            counterText: "",
           ),
         );
     }

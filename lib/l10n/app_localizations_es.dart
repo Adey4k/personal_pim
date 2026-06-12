@@ -541,7 +541,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get unknownRegistrationError => 'Error de registro desconocido.';
 
   @override
-  String get userNotAuthenticated => 'Usuario no autenticado.';
+  String get userNotAuthenticated => 'Usuario no auténticado.';
 
   @override
   String get unknownError => 'Error desconocido.';
@@ -574,4 +574,53 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get stopRecordingToRecognize => 'Detenga la grabación primero';
+
+  @override
+  String get onboardingHomeTitle => '¡Bienvenido a Personal PIM!';
+
+  @override
+  String get onboardingHomeDesc =>
+      'Administre sus contactos aquí. Puede arrastrar y soltar filas para cambiar su orden, y hacer clic en el encabezado de una columna ordenará la lista por ese campo.';
+
+  @override
+  String get onboardingAddContactTitle => 'Añadir contactos';
+
+  @override
+  String get onboardingAddContactDesc =>
+      'Toca aquí para añadir un nuevo contacto manualmente o usando IA.';
+
+  @override
+  String get onboardingCalendarTitle => 'Calendario y tareas';
+
+  @override
+  String get onboardingCalendarDesc =>
+      'Consulta aquí los cumpleaños y tu lista de tareas.';
+
+  @override
+  String get onboardingSettingsTitle => 'Ajustes de la aplicación';
+
+  @override
+  String get onboardingSettingsDesc =>
+      'Personaliza la aplicación, importa/exporta datos y encuentra información sobre widgets.';
+
+  @override
+  String get onboardingIntelligentInputTitle => 'Entrada inteligente';
+
+  @override
+  String get onboardingIntelligentInputDesc =>
+      'Pegue cualquier texto sobre un contacto (por ejemplo, un mensaje de un mensajero) y la IA intentará encontrar campos y completarlos automáticamente.';
+
+  @override
+  String get onboardingWidgetTitle => 'Añadir widgets';
+
+  @override
+  String get onboardingWidgetDesc =>
+      'No olvides añadir nuestro widget a tu pantalla de inicio para ver los próximos cumpleaños.';
+
+  @override
+  String get onboardingContactMeTitle => 'Contactar con el soporte';
+
+  @override
+  String get onboardingContactMeDesc =>
+      '¿Tienes sugerencias? Contáctame en ladikovmax@gmail.com';
 }

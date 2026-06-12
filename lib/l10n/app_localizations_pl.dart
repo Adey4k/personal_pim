@@ -567,4 +567,53 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get stopRecordingToRecognize => 'Najpierw zatrzymaj nagrywanie';
+
+  @override
+  String get onboardingHomeTitle => 'Witaj w Personal PIM!';
+
+  @override
+  String get onboardingHomeDesc =>
+      'Zarządzaj swoimi kontaktami tutaj. Możesz przeciągać i upuszczać wiersze, aby zmienić ich kolejność, a kliknięcie nagłówka kolumny posortuje listę według tego pola.';
+
+  @override
+  String get onboardingAddContactTitle => 'Dodaj kontakty';
+
+  @override
+  String get onboardingAddContactDesc =>
+      'Dotknij tutaj, aby dodać nowy kontakt ręcznie lub za pomocą AI.';
+
+  @override
+  String get onboardingCalendarTitle => 'Kalendarz i zadania';
+
+  @override
+  String get onboardingCalendarDesc =>
+      'Przeglądaj tutaj urodziny i listę swoich zadań.';
+
+  @override
+  String get onboardingSettingsTitle => 'Ustawienia aplikacji';
+
+  @override
+  String get onboardingSettingsDesc =>
+      'Dostosuj aplikację, importuj/eksportuj dane i znajdź informacje o widżetach.';
+
+  @override
+  String get onboardingIntelligentInputTitle => 'Inteligentne wprowadzanie';
+
+  @override
+  String get onboardingIntelligentInputDesc =>
+      'Wklej dowolny tekst o kontakcie (np. wiadomość z komunikatora), а SI spróbuje znaleźć pola i wypełnić je automatycznie.';
+
+  @override
+  String get onboardingWidgetTitle => 'Dodaj widżety';
+
+  @override
+  String get onboardingWidgetDesc =>
+      'Nie zapomnij dodać naszego widżetu do ekranu głównego, aby widzieć nadchodzące urodziny!';
+
+  @override
+  String get onboardingContactMeTitle => 'Kontakt z pomocą';
+
+  @override
+  String get onboardingContactMeDesc =>
+      'Masz propozycje? Skontaktuj się ze mną pod adresem ladikovmax@gmail.com';
 }

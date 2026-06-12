@@ -98,12 +98,18 @@ class AuthService {
 
   Future<UserCredential?> signInWithEmail(String email, String password) async {
     try {
-      final credential = await _auth.signInWithEmailAndPassword(
+      final userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      return credential;
+      if (userCredential.user != null) {
+        // Since we don't have languageCode here easily, 
+        // initializeUserDatabase handles existing users by checking if contacts exist.
+        await _dbService.initializeUserDatabase('en'); 
+      }
+
+      return userCredential;
     } on FirebaseAuthException catch (e) {
       throw Exception(_getAuthErrorMessage(e));
     } on Exception {

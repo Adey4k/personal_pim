@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
+import 'package:showcaseview/showcaseview.dart';
 import 'firebase_options.dart';
 import 'package:home_widget/home_widget.dart';
 import 'pages/login_page.dart';
@@ -14,8 +15,12 @@ import 'utils/env.dart';
 import 'providers/locale_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/notification_provider.dart';
+import 'providers/tutorial_provider.dart';
+import 'providers/contacts_provider.dart';
 import 'services/notification_service.dart';
 import 'services/firestore_service.dart';
+import 'services/gemini_service.dart';
+import 'services/speech_service.dart';
 import 'pages/contact_page.dart';
 import 'l10n/app_localizations.dart';
 
@@ -48,6 +53,11 @@ void main() async {
         ChangeNotifierProvider.value(value: localeProvider),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => NotificationProvider()),
+        ChangeNotifierProvider(create: (context) => TutorialProvider()),
+        ChangeNotifierProvider(create: (context) => ContactsProvider()),
+        Provider<FirestoreService>(create: (context) => FirestoreService()),
+        Provider<GeminiService>(create: (context) => GeminiService()),
+        Provider<SpeechService>(create: (context) => SpeechService()),
       ],
       child: const MyApp(),
     ),
@@ -68,41 +78,43 @@ class MyApp extends StatelessWidget {
     final localeProvider = Provider.of<LocaleProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
 
-    return MaterialApp(
-      title: 'Personal PIM',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: themeProvider.seedColor,
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: themeProvider.seedColor,
-          brightness: Brightness.dark,
-          surface: const Color(0xFF1A1C1E),
-        ),
-        scaffoldBackgroundColor: const Color(0xFF1A1C1E),
-      ),
-      themeMode: themeProvider.themeMode,
-      locale: localeProvider.locale,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      builder: (context, child) {
-        final mediaQueryData = MediaQuery.of(context);
-        return MediaQuery(
-          data: mediaQueryData.copyWith(
-            textScaler: mediaQueryData.textScaler.clamp(
-              minScaleFactor: 0.8,
-              maxScaleFactor: 1.1,
-            ),
+    return ShowCaseWidget(
+      builder: (context) => MaterialApp(
+        title: 'Personal PIM',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: themeProvider.seedColor,
+            brightness: Brightness.light,
           ),
-          child: child!,
-        );
-      },
-      home: const AppRoot(),
+          useMaterial3: true,
+        ),
+        darkTheme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: themeProvider.seedColor,
+            brightness: Brightness.dark,
+            surface: const Color(0xFF1A1C1E),
+          ),
+          scaffoldBackgroundColor: const Color(0xFF1A1C1E),
+        ),
+        themeMode: themeProvider.themeMode,
+        locale: localeProvider.locale,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) {
+          final mediaQueryData = MediaQuery.of(context);
+          return MediaQuery(
+            data: mediaQueryData.copyWith(
+              textScaler: mediaQueryData.textScaler.clamp(
+                minScaleFactor: 0.8,
+                maxScaleFactor: 1.1,
+              ),
+            ),
+            child: child!,
+          );
+        },
+        home: const AppRoot(),
+      ),
     );
   }
 }
@@ -223,7 +235,7 @@ class _AppNavigationHandlerState extends State<AppNavigationHandler>
   }
 
   void _navigateToContact(String id) async {
-    final firestore = FirestoreService();
+    final firestore = Provider.of<FirestoreService>(context, listen: false);
     final contact = await firestore.getContact(id);
     if (contact != null && mounted) {
       Navigator.of(context).push(

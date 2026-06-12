@@ -205,5 +205,19 @@
   "dontHaveAccount": "Немає акаунта? Зареєструватися",
   "alreadyHaveAccount": "Вже є акаунт? Увійти",
   "enterTextToRecognize": "Введіть текст для розпізнавання",
-  "stopRecordingToRecognize": "Спершу зупиніть запис"
+  "stopRecordingToRecognize": "Спершу зупиніть запис",
+  "onboardingHomeTitle": "Ласкаво просимо до Personal PIM!",
+  "onboardingHomeDesc": "Тут ви можете керувати контактами. Рядки можна перетягувати для зміни порядку, а натискання на заголовок колонки відсортує список за цим полем.",
+  "onboardingAddContactTitle": "Додавання контактів",
+  "onboardingAddContactDesc": "Натисніть тут, щоб додати новий контакт вручну або за допомогою ШІ.",
+  "onboardingCalendarTitle": "Календар та завдання",
+  "onboardingCalendarDesc": "Тут ви знайдете дні народження та список ваших справ.",
+  "onboardingSettingsTitle": "Налаштування",
+  "onboardingSettingsDesc": "Змінюйте тему, імпортуйте дані. Не забувайте, що можете додати віджети на робочий стіл вашого телефону!",
+  "onboardingIntelligentInputTitle": "Інтелектуальний ввід",
+  "onboardingIntelligentInputDesc": "Вставте будь-який текст про контакт (наприклад, повідомлення з месенджера), а ШІ спробує знайти поля та заповнити їх автоматично.",
+  "onboardingWidgetTitle": "Додайте віджети",
+  "onboardingWidgetDesc": "Не забудьте додати віджет на головний екран телефону, щоб бачити наближення свят!",
+  "onboardingContactMeTitle": "Зв'язок зі мною",
+  "onboardingContactMeDesc": "ladikovmax@gmail.com"
 }

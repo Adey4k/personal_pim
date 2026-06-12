@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="add_contact_label">Додати контакт</string>
+    <string name="add_contact_desc">Натисніть щоб додати контакт</string>
+    <string name="add_contact_widget_name">Додати контакт</string>
+    <string name="birthday_widget_title">Дні народження</string>
+    <string name="birthday_widget_name">Дні народження</string>
+    <string name="birthday_empty">Немає найближчих днів народження</string>
+    <string name="app_name">Mnemo PIM</string>
+</resources>

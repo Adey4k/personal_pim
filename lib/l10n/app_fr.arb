@@ -176,5 +176,19 @@
     }
   },
   "enterTextToRecognize": "Entrez le texte à reconnaître",
-  "stopRecordingToRecognize": "Arrêtez d'abord l'enregistrement"
+  "stopRecordingToRecognize": "Arrêtez d'abord l'enregistrement",
+  "onboardingHomeTitle": "Bienvenue sur Personal PIM !",
+  "onboardingHomeDesc": "Gérez vos contacts ici. Vous pouvez glisser-déposer des lignes pour modifier leur ordre, et cliquer sur un en-tête de colonne triera la liste selon ce champ.",
+  "onboardingAddContactTitle": "Ajouter des contacts",
+  "onboardingAddContactDesc": "Appuyez ici pour ajouter un nouveau contact manuellement ou via l'IA.",
+  "onboardingCalendarTitle": "Calendrier & Tâches",
+  "onboardingCalendarDesc": "Consultez ici les anniversaires et votre liste de tâches.",
+  "onboardingSettingsTitle": "Paramètres de l'application",
+  "onboardingSettingsDesc": "Personnalisez l'application, importez/exportez des données et trouvez des infos sur les widgets.",
+  "onboardingIntelligentInputTitle": "Saisie intelligente",
+  "onboardingIntelligentInputDesc": "Collez n'importe quel texte sur un contact (par exemple, un message d'une messagerie), et l'IA essaiera de trouver les champs et de les remplir automatiquement.",
+  "onboardingWidgetTitle": "Ajouter des widgets",
+  "onboardingWidgetDesc": "N'oubliez pas d'ajouter notre widget à votre écran d'accueil pour voir les anniversaires à venir !",
+  "onboardingContactMeTitle": "Contacter le support",
+  "onboardingContactMeDesc": "Vous avez des suggestions ? Contactez-moi à ladikovmax@gmail.com"
 }

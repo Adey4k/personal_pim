@@ -33,6 +33,7 @@ class SearchFilterBar extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 4.0),
           child: TextField(
             controller: searchController,
+            maxLength: 64,
             decoration: InputDecoration(
               hintText: '${l10n.search}...',
               prefixIcon: const Icon(Icons.search),
@@ -52,6 +53,7 @@ class SearchFilterBar extends StatelessWidget {
                 borderSide: BorderSide.none,
               ),
               contentPadding: const EdgeInsets.symmetric(vertical: 0),
+              counterText: "",
             ),
             onChanged: onSearchChanged,
           ),

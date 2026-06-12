@@ -571,4 +571,53 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get stopRecordingToRecognize => 'Arrêtez d\'abord l\'enregistrement';
+
+  @override
+  String get onboardingHomeTitle => 'Bienvenue sur Personal PIM !';
+
+  @override
+  String get onboardingHomeDesc =>
+      'Gérez vos contacts ici. Vous pouvez glisser-déposer des lignes pour modifier leur ordre, et cliquer sur un en-tête de colonne triera la liste selon ce champ.';
+
+  @override
+  String get onboardingAddContactTitle => 'Ajouter des contacts';
+
+  @override
+  String get onboardingAddContactDesc =>
+      'Appuyez ici pour ajouter un nouveau contact manuellement ou via l\'IA.';
+
+  @override
+  String get onboardingCalendarTitle => 'Calendrier & Tâches';
+
+  @override
+  String get onboardingCalendarDesc =>
+      'Consultez ici les anniversaires et votre liste de tâches.';
+
+  @override
+  String get onboardingSettingsTitle => 'Paramètres de l\'application';
+
+  @override
+  String get onboardingSettingsDesc =>
+      'Personnalisez l\'application, importez/exportez des données et trouvez des infos sur les widgets.';
+
+  @override
+  String get onboardingIntelligentInputTitle => 'Saisie intelligente';
+
+  @override
+  String get onboardingIntelligentInputDesc =>
+      'Collez n\'importe quel texte sur un contact (par exemple, un message d\'une messagerie), et l\'IA essaiera de trouver les champs et de les remplir automatiquement.';
+
+  @override
+  String get onboardingWidgetTitle => 'Ajouter des widgets';
+
+  @override
+  String get onboardingWidgetDesc =>
+      'N\'oubliez pas d\'ajouter notre widget à votre écran d\'accueil pour voir les anniversaires à venir !';
+
+  @override
+  String get onboardingContactMeTitle => 'Contacter le support';
+
+  @override
+  String get onboardingContactMeDesc =>
+      'Vous avez des suggestions ? Contactez-moi à ladikovmax@gmail.com';
 }

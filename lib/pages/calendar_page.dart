@@ -8,6 +8,7 @@ import '../services/firestore_service.dart';
 import '../pages/contact_page.dart';
 import '../widgets/todo/todo_edit_sheet.dart';
 import '../utils/constants.dart';
+import 'package:provider/provider.dart';
 import '../l10n/app_localizations.dart';
 
 class CalendarPage extends StatefulWidget {
@@ -18,7 +19,7 @@ class CalendarPage extends StatefulWidget {
 }
 
 class _CalendarPageState extends State<CalendarPage> {
-  final FirestoreService _dbService = FirestoreService();
+  late final FirestoreService _dbService;
   late final Stream<List<Contact>> _contactsStream;
   late final Stream<List<Todo>> _todosStream;
   
@@ -30,6 +31,7 @@ class _CalendarPageState extends State<CalendarPage> {
   void initState() {
     super.initState();
     _selectedDay = DateTime(_focusedDay.year, _focusedDay.month, _focusedDay.day);
+    _dbService = Provider.of<FirestoreService>(context, listen: false);
     _contactsStream = _dbService.getContactsStream();
     _todosStream = _dbService.getTodosStream();
   }

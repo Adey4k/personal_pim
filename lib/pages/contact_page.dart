@@ -3,8 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:uuid/uuid.dart';
+import 'package:provider/provider.dart';
+import 'package:showcaseview/showcaseview.dart';
 import 'package:personal_pim/services/gemini_service.dart';
+import 'package:personal_pim/services/speech_service.dart';
 import '../models/contact.dart';
+import '../models/ai_parsed_contact.dart';
 import '../services/firestore_service.dart';
 import '../utils/constants.dart';
 import '../utils/validators.dart';
@@ -12,6 +16,7 @@ import '../widgets/contact/dynamic_field_widget.dart';
 import '../widgets/contact/intelligent_input_sheet.dart';
 import '../widgets/contact/group_manager_sheet.dart';
 import '../l10n/app_localizations.dart';
+import '../providers/tutorial_provider.dart';
 
 class DynamicField {
   final String id;
@@ -60,12 +65,10 @@ class ContactPage extends StatefulWidget {
 }
 
 class _ContactPageState extends State<ContactPage> {
-  final FirestoreService _dbService = FirestoreService();
+  final GlobalKey _aiKey = GlobalKey();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _groupInputController = TextEditingController();
   final _uuid = const Uuid();
-
-  final stt.SpeechToText _speech = stt.SpeechToText();
 
   final List<DynamicField> _fields = [];
   final Set<String> _deletedFields = {};
@@ -146,6 +149,18 @@ class _ContactPageState extends State<ContactPage> {
         remindBefore: remindBefore,
       ));
     }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startTutorialIfNeeded();
+    });
+  }
+
+  void _startTutorialIfNeeded() {
+    final tutorialProvider = Provider.of<TutorialProvider>(context, listen: false);
+    if (!tutorialProvider.isContactTutorialShown) {
+      ShowCaseWidget.of(context).startShowCase([_aiKey]);
+      tutorialProvider.markContactTutorialAsShown();
+    }
   }
 
   @override
@@ -170,69 +185,40 @@ class _ContactPageState extends State<ContactPage> {
   Future<void> _processAiInput(String text) async {
     final l10n = AppLocalizations.of(context)!;
     try {
-      final geminiService = GeminiService();
-      final data = await geminiService.processInput(text, existingGroups: _availableGroups.toList());
+      final geminiService = Provider.of<GeminiService>(context, listen: false);
+      final aiContact = await geminiService.processInput(text, existingGroups: _availableGroups.toList());
 
       bool hasUsefulData = false;
 
       setState(() {
-        if (data['name'] != null && data['name'].toString().length < 50) {
-          String val = data['name'].toString().trim();
-          if (val.isNotEmpty) {
-            _nameController.text = val;
-            _isNameAiGenerated = true;
+        if (aiContact.name != null && aiContact.name!.isNotEmpty) {
+          _nameController.text = aiContact.name!;
+          _isNameAiGenerated = true;
+          hasUsefulData = true;
+        }
+
+        if (aiContact.groups.isNotEmpty) {
+          for (String g in aiContact.groups) {
+            if (!_availableGroups.contains(g) && _availableGroups.length < 10) _availableGroups.add(g);
+            if (!_selectedGroups.contains(g) && _selectedGroups.length < 10) _selectedGroups.add(g);
+          }
+          final gIdx = _fields.indexWhere((f) => f.keyController.text == AppKeys.groups);
+          if (gIdx != -1) {
+            _fields[gIdx].valueController.text = _selectedGroups.join(', ');
+            _fields[gIdx].isAiGenerated = true;
             hasUsefulData = true;
           }
         }
 
-        if (data['groups'] != null && data['groups'] is List) {
-          List<String> aiGroups = List<String>.from(data['groups']);
-          if (aiGroups.isNotEmpty) {
-            for (String g in aiGroups) {
-              if (!_availableGroups.contains(g) && _availableGroups.length < 10) _availableGroups.add(g);
-              if (!_selectedGroups.contains(g) && _selectedGroups.length < 10) _selectedGroups.add(g);
-            }
-            final gIdx = _fields.indexWhere((f) => f.keyController.text == AppKeys.groups);
-            if (gIdx != -1) {
-              _fields[gIdx].valueController.text = _selectedGroups.join(', ');
-              _fields[gIdx].isAiGenerated = true;
-              hasUsefulData = true;
-            }
-          }
-        }
-
-        if (data['fields'] != null && data['fields'] is List) {
-          for (var f in data['fields']) {
-            if (f is! Map) continue;
-            String key = (f['key'] ?? '').toString().toLowerCase();
-            String value = (f['value'] ?? '').toString();
-            String typeStr = (f['type'] ?? 'text').toString();
-
-            if (key.contains('reason') || key.contains('analys') || key.contains('note')) continue;
-
-            if (key.contains('phone') || key.contains('тел') || key.contains('номер')) key = AppKeys.phone;
-            else if (key.contains('email') || key.contains('пошт')) key = AppKeys.email;
-            else if (key.contains('birth') || key.contains('народж') || key.contains('рожд')) key = AppKeys.birthday;
-            else key = f['key'].toString();
-
-            FieldType type = FieldType.text;
-            if (widget.existingFieldTypes.containsKey(key)) {
-              type = widget.existingFieldTypes[key]!;
-            } else if (typeStr == 'number') {
-              type = FieldType.number;
-            } else if (typeStr == 'date') {
-              type = FieldType.date;
-            } else if (typeStr == 'boolean') {
-              type = FieldType.boolean;
-            }
-
-            final idx = _fields.indexWhere((ex) => ex.keyController.text.toLowerCase() == key.toLowerCase());
+        if (aiContact.fields.isNotEmpty) {
+          for (var f in aiContact.fields) {
+            final idx = _fields.indexWhere((ex) => ex.keyController.text.toLowerCase() == f.key.toLowerCase());
             if (idx != -1) {
-              _fields[idx].valueController.text = value;
+              _fields[idx].valueController.text = f.value;
               _fields[idx].isAiGenerated = true;
               hasUsefulData = true;
-            } else if (value.isNotEmpty) {
-              _fields.add(DynamicField(id: _uuid.v4(), key: key, value: value, type: type, isAiGenerated: true));
+            } else if (f.value.isNotEmpty) {
+              _fields.add(DynamicField(id: _uuid.v4(), key: f.key, value: f.value, type: f.type, isAiGenerated: true));
               hasUsefulData = true;
             }
           }
@@ -269,7 +255,8 @@ class _ContactPageState extends State<ContactPage> {
           onToggleListening: () async {
             if (!isListening) {
               try {
-                bool available = await _speech.initialize(
+                final speechService = Provider.of<SpeechService>(context, listen: false);
+                bool available = await speechService.initialize(
                   onError: (error) {
                     debugPrint('STT Error: $error');
                     if (!mounted) return;
@@ -294,11 +281,11 @@ class _ContactPageState extends State<ContactPage> {
                   if (!currentContext.mounted) return;
                   String localeId = Localizations.localeOf(currentContext).toString();
                   
-                  await _speech.listen(
-                    listenOptions: stt.SpeechListenOptions(localeId: localeId),
-                    onResult: (result) {
+                  await speechService.listen(
+                    localeId: localeId,
+                    onResult: (resultText) {
                       setModalState(() {
-                        aiInputController.text = result.recognizedWords;
+                        aiInputController.text = resultText;
                       });
                     },
                   );
@@ -315,14 +302,14 @@ class _ContactPageState extends State<ContactPage> {
                 );
               }
             } else {
-              await _speech.stop();
+              await Provider.of<SpeechService>(context, listen: false).stop();
               if (!mounted) return;
               setModalState(() => isListening = false);
             }
           },
           onProcessInput: (text) async {
             setModalState(() => isLoading = true);
-            await _speech.stop();
+            await Provider.of<SpeechService>(context, listen: false).stop();
             await _processAiInput(text);
             if (!mounted) return;
             if (context.mounted) Navigator.pop(context);
@@ -348,7 +335,11 @@ class _ContactPageState extends State<ContactPage> {
             TextField(
               controller: newNameController, 
               autofocus: true, 
-              decoration: InputDecoration(hintText: l10n.fieldNameHint),
+              maxLength: 64,
+              decoration: InputDecoration(
+                hintText: l10n.fieldNameHint,
+                counterText: "",
+              ),
               onChanged: (val) {
                 final trimmed = val.trim();
                 if (widget.existingFieldTypes.containsKey(trimmed)) {
@@ -448,7 +439,8 @@ class _ContactPageState extends State<ContactPage> {
     if (key.isNotEmpty) {
       setState(() => _isSaving = true);
       try {
-        final usageCount = await _dbService.getFieldUsageCount(key);
+        final dbService = Provider.of<FirestoreService>(context, listen: false);
+        final usageCount = await dbService.getFieldUsageCount(key);
         
         if (usageCount > 0) {
           if (!mounted) return;
@@ -473,7 +465,7 @@ class _ContactPageState extends State<ContactPage> {
             return;
           }
 
-          await _dbService.deleteFieldGlobal(key);
+          await dbService.deleteFieldGlobal(key);
         }
       } catch (e) {
         if (!mounted) return;
@@ -511,7 +503,8 @@ class _ContactPageState extends State<ContactPage> {
       if (!mounted) return;
       setState(() => _isSaving = true);
       try {
-        if (widget.contact?.id != null) await _dbService.deleteContact(widget.contact!.id!);
+        final dbService = Provider.of<FirestoreService>(context, listen: false);
+        if (widget.contact?.id != null) await dbService.deleteContact(widget.contact!.id!);
         if (!mounted) return;
         Navigator.pop(context); 
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.contactDeleted)));
@@ -532,9 +525,10 @@ class _ContactPageState extends State<ContactPage> {
                         key == AppKeys.email || 
                         key == AppKeys.birthday;
 
+    final dbService = Provider.of<FirestoreService>(context, listen: false);
     int usageCount = 0;
     if (key.isNotEmpty && !isCoreField) {
-      usageCount = await _dbService.getFieldUsageCount(key);
+      usageCount = await dbService.getFieldUsageCount(key);
     }
 
     if (!mounted) return;
@@ -574,7 +568,15 @@ class _ContactPageState extends State<ContactPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.fieldName),
-        content: TextField(controller: renameController, autofocus: true, decoration: InputDecoration(hintText: l10n.enterName)),
+        content: TextField(
+          controller: renameController, 
+          autofocus: true, 
+          maxLength: 64,
+          decoration: InputDecoration(
+            hintText: l10n.enterName,
+            counterText: "",
+          ),
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
           ElevatedButton(onPressed: () { setState(() { _fields[index].keyController.text = renameController.text.trim(); _fields[index].isAiGenerated = false; }); Navigator.pop(context); }, child: Text(l10n.save)),
@@ -611,9 +613,10 @@ class _ContactPageState extends State<ContactPage> {
         }
       }
       if (widget.contact != null) { for (var key in _deletedFields) contactData[key] = FieldValue.delete(); }
+      final dbService = Provider.of<FirestoreService>(context, listen: false);
       final savedContact = Contact(id: widget.contact?.id, fields: contactData, orderIndex: widget.contact?.orderIndex ?? 0);
-      if (widget.contact == null) await _dbService.addContact(savedContact);
-      else await _dbService.updateContact(savedContact);
+      if (widget.contact == null) await dbService.addContact(savedContact);
+      else await dbService.updateContact(savedContact);
       if (!mounted) return;
       Navigator.pop(context);
     } catch (e) { 
@@ -635,7 +638,11 @@ class _ContactPageState extends State<ContactPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(l10n.groupName, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-            TextField(controller: renameCtrl, maxLength: 16, decoration: InputDecoration(counterText: "", hintText: l10n.nameWithoutCommas)),
+            TextField(
+              controller: renameCtrl, 
+              maxLength: 64, 
+              decoration: InputDecoration(counterText: "", hintText: l10n.nameWithoutCommas),
+            ),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
@@ -649,7 +656,8 @@ class _ContactPageState extends State<ContactPage> {
                   setState(() { _availableGroups.remove(oldGroup); _selectedGroups.remove(oldGroup); field.valueController.text = _selectedGroups.join(', '); field.isAiGenerated = false; });
                   setBottomSheetState(() {});
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.groupDeleted)));
-                  await _dbService.deleteGroupGlobal(oldGroup);
+                  final dbService = Provider.of<FirestoreService>(context, listen: false);
+                  await dbService.deleteGroupGlobal(oldGroup);
                 },
               ),
             ),
@@ -679,7 +687,8 @@ class _ContactPageState extends State<ContactPage> {
               });
               setBottomSheetState(() {});
               Navigator.pop(ctx);
-              await _dbService.renameGroupGlobal(oldGroup, newName);
+              final dbService = Provider.of<FirestoreService>(context, listen: false);
+              await dbService.renameGroupGlobal(oldGroup, newName);
             },
             child: Text(l10n.save),
           ),
@@ -754,9 +763,17 @@ class _ContactPageState extends State<ContactPage> {
                 keyboardType: TextInputType.multiline,
                 minLines: 1,
                 maxLines: 4,
-                onChanged: (_) { if (_isNameAiGenerated) setState(() => _isNameAiGenerated = false); },
+                onChanged: (_) {
+                  if (_isNameAiGenerated) setState(() => _isNameAiGenerated = false);
+                },
                 style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
-                decoration: InputDecoration(hintText: l10n.name, border: InputBorder.none, hintStyle: const TextStyle(color: Colors.grey)),
+                maxLength: 64,
+                decoration: InputDecoration(
+                  hintText: l10n.name,
+                  border: InputBorder.none,
+                  hintStyle: const TextStyle(color: Colors.grey),
+                  counterText: "",
+                ),
               ),
             ),
             const Divider(),
@@ -790,13 +807,18 @@ class _ContactPageState extends State<ContactPage> {
                   const SizedBox(height: 8),
                   SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton.icon(
-                          onPressed: _showIntelligentInput,
-                          icon: const Icon(Icons.auto_awesome),
-                          label: Text(l10n.intelligentInput),
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).colorScheme.tertiary,
-                              foregroundColor: Theme.of(context).colorScheme.onTertiary))),
+                      child: Showcase(
+                        key: _aiKey,
+                        title: l10n.onboardingIntelligentInputTitle,
+                        description: l10n.onboardingIntelligentInputDesc,
+                        child: ElevatedButton.icon(
+                            onPressed: _showIntelligentInput,
+                            icon: const Icon(Icons.auto_awesome),
+                            label: Text(l10n.intelligentInput),
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: Theme.of(context).colorScheme.tertiary,
+                                foregroundColor: Theme.of(context).colorScheme.onTertiary)),
+                      )),
                 ],
               ),
             ),

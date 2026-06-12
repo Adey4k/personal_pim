@@ -562,4 +562,52 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stopRecordingToRecognize => 'Stop recording first to recognize';
+
+  @override
+  String get onboardingHomeTitle => 'Welcome to Personal PIM!';
+
+  @override
+  String get onboardingHomeDesc =>
+      'Manage your contacts here. You can drag and drop rows to change their order, and clicking on a column header will sort the list by that field.';
+
+  @override
+  String get onboardingAddContactTitle => 'Add Contacts';
+
+  @override
+  String get onboardingAddContactDesc =>
+      'Tap here to add a new contact manually or using AI.';
+
+  @override
+  String get onboardingCalendarTitle => 'Calendar & Tasks';
+
+  @override
+  String get onboardingCalendarDesc =>
+      'View birthdays and your task list here.';
+
+  @override
+  String get onboardingSettingsTitle => 'App Settings';
+
+  @override
+  String get onboardingSettingsDesc =>
+      'Customize the app, import/export data. Don\'t forget that you can add widgets to your home screen!';
+
+  @override
+  String get onboardingIntelligentInputTitle => 'Intelligent Input';
+
+  @override
+  String get onboardingIntelligentInputDesc =>
+      'Paste any text about a contact (e.g., a message from a messenger), and AI will try to find fields and fill them automatically.';
+
+  @override
+  String get onboardingWidgetTitle => 'Add Widgets';
+
+  @override
+  String get onboardingWidgetDesc =>
+      'Don\'t forget to add our widget to your home screen to see upcoming birthdays!';
+
+  @override
+  String get onboardingContactMeTitle => 'Contact Support';
+
+  @override
+  String get onboardingContactMeDesc => 'ladikovmax@gmail.com';
 }

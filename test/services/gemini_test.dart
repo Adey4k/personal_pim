@@ -27,9 +27,9 @@ void main() {
 
       final result = await geminiService.processInput('some text');
 
-      expect(result['name'], 'John Doe');
-      expect(result['groups'], ['Work']);
-      expect(result['fields'][0]['key'], 'phone');
+      expect(result.name, 'John Doe');
+      expect(result.groups, ['Work']);
+      expect(result.fields[0].key, 'phone');
     });
 
     test('processInput throws exception on empty AI response', () async {

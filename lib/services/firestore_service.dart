@@ -6,23 +6,15 @@ import '../utils/constants.dart';
 import 'home_widget_service.dart';
 
 class FirestoreService {
-  static FirestoreService _instance = FirestoreService._internal();
+  final FirebaseAuth _authInstance;
+  final FirebaseFirestore _firestoreInstance;
 
-  factory FirestoreService({FirebaseAuth? auth, FirebaseFirestore? firestore}) {
-    if (auth != null) _instance._authInstance = auth;
-    if (firestore != null) _instance._firestoreInstance = firestore;
-    return _instance;
-  }
+  FirestoreService({FirebaseAuth? auth, FirebaseFirestore? firestore})
+      : _authInstance = auth ?? FirebaseAuth.instance,
+        _firestoreInstance = firestore ?? FirebaseFirestore.instance;
 
-  static set instance(FirestoreService value) => _instance = value;
-
-  FirestoreService._internal();
-
-  FirebaseAuth? _authInstance;
-  FirebaseAuth get _auth => _authInstance ?? FirebaseAuth.instance;
-
-  FirebaseFirestore? _firestoreInstance;
-  FirebaseFirestore get _db => _firestoreInstance ?? FirebaseFirestore.instance;
+  FirebaseAuth get _auth => _authInstance;
+  FirebaseFirestore get _db => _firestoreInstance;
 
   CollectionReference? _getUserCollection() {
     final user = _auth.currentUser;
@@ -137,7 +129,13 @@ class FirestoreService {
       for (var update in chunk) {
         batch.update(update.key, update.value);
       }
-      await batch.commit();
+      try {
+        await batch.commit();
+      } catch (e) {
+        // Log error and optionally throw if you want to abort subsequent batches
+        print("Error committing batch (index $i): $e");
+        rethrow; // Assuming we want the caller to know about the failure
+      }
     }
   }
 
@@ -246,5 +244,50 @@ class FirestoreService {
 
     final snapshot = await collection.limit(1).get();
     if (snapshot.docs.isNotEmpty) return;
+
+    // Localized strings
+    String name;
+    String groups;
+
+    switch (languageCode) {
+      case 'uk':
+        name = 'Джейн Доу';
+        groups = 'Сім\'я, Робота, Друзі';
+        break;
+      case 'de':
+        name = 'Jane Doe';
+        groups = 'Familie, Arbeit, Freunde';
+        break;
+      case 'fr':
+        name = 'Jane Doe';
+        groups = 'Famille, Travail, Amis';
+        break;
+      case 'es':
+        name = 'Jane Doe';
+        groups = 'Familia, Trabajo, Amigos';
+        break;
+      case 'pl':
+        name = 'Jane Doe';
+        groups = 'Rodzina, Praca, Znajomi';
+        break;
+      default:
+        name = 'Jane Doe';
+        groups = 'Family, Work, Friends';
+    }
+
+    final contact = Contact(fields: {
+      AppKeys.name: name,
+      AppKeys.phone: '+380123456789',
+      AppKeys.email: 'janedoe@gmail.com',
+      AppKeys.birthday: {
+        'date': '12.12.2012',
+        'remindYearly': true,
+        'remindBefore': ['day', 'today']
+      },
+      AppKeys.groups: groups
+    });
+
+    contact.orderIndex = 0;
+    await collection.add(contact.toMap());
   }
 }

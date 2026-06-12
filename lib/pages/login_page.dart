@@ -95,18 +95,21 @@ class _LoginPageState extends State<LoginPage> {
               // Input Fields
               TextField(
                 controller: _emailController,
+                maxLength: 64,
                 decoration: InputDecoration(
                   labelText: l10n.email,
                   prefixIcon: const Icon(Icons.email_outlined),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  counterText: "",
                 ),
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _passwordController,
+                maxLength: 64,
                 decoration: InputDecoration(
                   labelText: l10n.password,
                   prefixIcon: const Icon(Icons.lock_outline),
@@ -123,6 +126,7 @@ class _LoginPageState extends State<LoginPage> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  counterText: "",
                 ),
                 obscureText: !_isPasswordVisible,
               ),

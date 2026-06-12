@@ -110,12 +110,14 @@ class _RegisterPageState extends State<RegisterPage> {
                   Expanded(
                     child: TextField(
                       controller: _firstNameController,
+                      maxLength: 64,
                       decoration: InputDecoration(
                         labelText: l10n.firstName,
                         prefixIcon: const Icon(Icons.person_outline),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
+                        counterText: "",
                       ),
                       textCapitalization: TextCapitalization.words,
                     ),
@@ -124,11 +126,13 @@ class _RegisterPageState extends State<RegisterPage> {
                   Expanded(
                     child: TextField(
                       controller: _lastNameController,
+                      maxLength: 64,
                       decoration: InputDecoration(
                         labelText: l10n.lastName,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
+                        counterText: "",
                       ),
                       textCapitalization: TextCapitalization.words,
                     ),
@@ -140,12 +144,14 @@ class _RegisterPageState extends State<RegisterPage> {
               // Email Field
               TextField(
                 controller: _emailController,
+                maxLength: 64,
                 decoration: InputDecoration(
                   labelText: l10n.email,
                   prefixIcon: const Icon(Icons.email_outlined),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  counterText: "",
                 ),
                 keyboardType: TextInputType.emailAddress,
               ),
@@ -154,6 +160,7 @@ class _RegisterPageState extends State<RegisterPage> {
               // Password Field
               TextField(
                 controller: _passwordController,
+                maxLength: 64,
                 decoration: InputDecoration(
                   labelText: l10n.password,
                   prefixIcon: const Icon(Icons.lock_outline),
@@ -170,6 +177,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  counterText: "",
                 ),
                 obscureText: !_isPasswordVisible,
               ),
@@ -178,6 +186,7 @@ class _RegisterPageState extends State<RegisterPage> {
               // Confirm Password Field
               TextField(
                 controller: _confirmPasswordController,
+                maxLength: 64,
                 decoration: InputDecoration(
                   labelText: l10n.confirmPassword,
                   prefixIcon: const Icon(Icons.lock_clock_outlined),
@@ -194,6 +203,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  counterText: "",
                 ),
                 obscureText: !_isConfirmPasswordVisible,
               ),

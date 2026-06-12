@@ -55,7 +55,7 @@ class GroupManagerSheet extends StatelessWidget {
                   Expanded(
                     child: TextField(
                       controller: groupInputController,
-                      maxLength: 16,
+                      maxLength: 64,
                       decoration: InputDecoration(
                         hintText: l10n.createNewGroup,
                         counterText: '',

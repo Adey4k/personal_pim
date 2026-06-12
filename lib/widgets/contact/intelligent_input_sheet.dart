@@ -118,6 +118,7 @@ class _IntelligentInputSheetState extends State<IntelligentInputSheet> with Sing
                   controller: widget.aiInputController,
                   maxLines: 5,
                   minLines: 3,
+                  maxLength: 128,
                   style: const TextStyle(fontSize: 16),
                   decoration: InputDecoration(
                     hintText: l10n.aiInputHint,
@@ -202,9 +203,7 @@ class _IntelligentInputSheetState extends State<IntelligentInputSheet> with Sing
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     elevation: 0,
                   ),
-                  onPressed: widget.aiInputController.text.trim().isEmpty || widget.isListening
-                      ? null
-                      : () => widget.onProcessInput(widget.aiInputController.text.trim()),
+                  onPressed: () => widget.onProcessInput(widget.aiInputController.text.trim()),
                   child: Text(
                     l10n.recognize,
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),

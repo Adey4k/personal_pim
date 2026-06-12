@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../models/todo.dart';
 import '../../models/contact.dart';
 import '../../services/firestore_service.dart';
+import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
 
 class TodoEditSheet extends StatefulWidget {
@@ -61,7 +62,7 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
   }
 
   Future<void> _pickContact() async {
-    final contacts = await FirestoreService().getAllContacts();
+    final contacts = await Provider.of<FirestoreService>(context, listen: false).getAllContacts();
     if (!mounted) return;
 
     final Contact? picked = await showDialog<Contact>(
@@ -82,9 +83,11 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextField(
+                      maxLength: 64,
                       decoration: InputDecoration(
                         hintText: AppLocalizations.of(context)!.search,
                         prefixIcon: const Icon(Icons.search),
+                        counterText: "",
                       ),
                       onChanged: (value) {
                         setDialogState(() => searchQuery = value);
@@ -157,6 +160,7 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _titleController,
+              maxLength: 64,
               decoration: InputDecoration(
                 labelText: l10n.todoTitle,
                 border: const OutlineInputBorder(),
@@ -171,6 +175,7 @@ class _TodoEditSheetState extends State<TodoEditSheet> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _descriptionController,
+              maxLength: 64,
               decoration: InputDecoration(
                 labelText: l10n.todoDescription,
                 border: const OutlineInputBorder(),

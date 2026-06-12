@@ -202,17 +202,30 @@ class SettingsPage extends StatelessWidget {
             },
           ),
 
-          const SizedBox(height: 32),
           const Divider(),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16.0),
-            child: Text(
-              "Ладіков Максим, 45 група \n ladikovmax@gmail.com",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 14,
-              ),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            child: Column(
+              children: [
+                Text(
+                  l10n.onboardingContactMeDesc,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  "Ладіков Максим, 45 група",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -222,7 +235,8 @@ class SettingsPage extends StatelessWidget {
 
   Future<void> _exportData(BuildContext context, AppLocalizations l10n) async {
     try {
-      final contacts = await FirestoreService().getAllContacts();
+      final dbService = Provider.of<FirestoreService>(context, listen: false);
+      final contacts = await dbService.getAllContacts();
       if (contacts.isEmpty) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -276,7 +290,8 @@ class SettingsPage extends StatelessWidget {
         return Contact.fromMap(Map<String, dynamic>.from(data), "");
       }).toList();
 
-      await FirestoreService().importContacts(contacts);
+      final dbService = Provider.of<FirestoreService>(context, listen: false);
+      await dbService.importContacts(contacts);
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -331,7 +346,8 @@ class SettingsPage extends StatelessWidget {
         );
 
         if (selectedContacts != null && selectedContacts.isNotEmpty) {
-          await FirestoreService().importContacts(selectedContacts);
+          final dbService = Provider.of<FirestoreService>(context, listen: false);
+          await dbService.importContacts(selectedContacts);
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(l10n.importSuccessful)),
@@ -388,10 +404,12 @@ class _ContactPickerSheetState extends State<_ContactPickerSheet> {
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: TextField(
+            maxLength: 64,
             decoration: InputDecoration(
               hintText: widget.l10n.search,
               prefixIcon: const Icon(Icons.search),
               border: const OutlineInputBorder(),
+              counterText: "",
             ),
             onChanged: (value) => setState(() => _searchQuery = value),
           ),

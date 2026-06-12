@@ -165,7 +165,7 @@
   "authGoogleError": "Error de autenticación de Google.",
   "unknownLoginError": "Error de inicio de sesión desconocido.",
   "unknownRegistrationError": "Error de registro desconocido.",
-  "userNotAuthenticated": "Usuario no autenticado.",
+  "userNotAuthenticated": "Usuario no auténticado.",
   "unknownError": "Error desconocido.",
   "waitCooldown": "Espera {seconds} seg. antes de volver a enviar.",
   "@waitCooldown": {
@@ -176,5 +176,19 @@
     }
   },
   "enterTextToRecognize": "Introduzca texto para reconocer",
-  "stopRecordingToRecognize": "Detenga la grabación primero"
+  "stopRecordingToRecognize": "Detenga la grabación primero",
+  "onboardingHomeTitle": "¡Bienvenido a Personal PIM!",
+  "onboardingHomeDesc": "Administre sus contactos aquí. Puede arrastrar y soltar filas para cambiar su orden, y hacer clic en el encabezado de una columna ordenará la lista por ese campo.",
+  "onboardingAddContactTitle": "Añadir contactos",
+  "onboardingAddContactDesc": "Toca aquí para añadir un nuevo contacto manualmente o usando IA.",
+  "onboardingCalendarTitle": "Calendario y tareas",
+  "onboardingCalendarDesc": "Consulta aquí los cumpleaños y tu lista de tareas.",
+  "onboardingSettingsTitle": "Ajustes de la aplicación",
+  "onboardingSettingsDesc": "Personaliza la aplicación, importa/exporta datos y encuentra información sobre widgets.",
+  "onboardingIntelligentInputTitle": "Entrada inteligente",
+  "onboardingIntelligentInputDesc": "Pegue cualquier texto sobre un contacto (por ejemplo, un mensaje de un mensajero) y la IA intentará encontrar campos y completarlos automáticamente.",
+  "onboardingWidgetTitle": "Añadir widgets",
+  "onboardingWidgetDesc": "No olvides añadir nuestro widget a tu pantalla de inicio para ver los próximos cumpleaños.",
+  "onboardingContactMeTitle": "Contactar con el soporte",
+  "onboardingContactMeDesc": "¿Tienes sugerencias? Contáctame en ladikovmax@gmail.com"
 }

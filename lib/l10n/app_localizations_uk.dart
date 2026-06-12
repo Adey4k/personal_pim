@@ -567,4 +567,52 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get stopRecordingToRecognize => 'Спершу зупиніть запис';
+
+  @override
+  String get onboardingHomeTitle => 'Ласкаво просимо до Personal PIM!';
+
+  @override
+  String get onboardingHomeDesc =>
+      'Тут ви можете керувати контактами. Рядки можна перетягувати для зміни порядку, а натискання на заголовок колонки відсортує список за цим полем.';
+
+  @override
+  String get onboardingAddContactTitle => 'Додавання контактів';
+
+  @override
+  String get onboardingAddContactDesc =>
+      'Натисніть тут, щоб додати новий контакт вручну або за допомогою ШІ.';
+
+  @override
+  String get onboardingCalendarTitle => 'Календар та завдання';
+
+  @override
+  String get onboardingCalendarDesc =>
+      'Тут ви знайдете дні народження та список ваших справ.';
+
+  @override
+  String get onboardingSettingsTitle => 'Налаштування';
+
+  @override
+  String get onboardingSettingsDesc =>
+      'Змінюйте тему, імпортуйте дані. Не забувайте, що можете додати віджети на робочий стіл вашого телефону!';
+
+  @override
+  String get onboardingIntelligentInputTitle => 'Інтелектуальний ввід';
+
+  @override
+  String get onboardingIntelligentInputDesc =>
+      'Вставте будь-який текст про контакт (наприклад, повідомлення з месенджера), а ШІ спробує знайти поля та заповнити їх автоматично.';
+
+  @override
+  String get onboardingWidgetTitle => 'Додайте віджети';
+
+  @override
+  String get onboardingWidgetDesc =>
+      'Не забудьте додати віджет на головний екран телефону, щоб бачити наближення свят!';
+
+  @override
+  String get onboardingContactMeTitle => 'Зв\'язок зі мною';
+
+  @override
+  String get onboardingContactMeDesc => 'ladikovmax@gmail.com';
 }

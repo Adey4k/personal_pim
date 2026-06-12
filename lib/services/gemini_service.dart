@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../utils/env.dart';
+import '../models/ai_parsed_contact.dart';
 
 abstract class GeminiResponse {
   String? get text;
@@ -40,7 +41,7 @@ class GeminiService {
 
   GeminiService({GeminiClient? client}) : _client = client ?? GoogleGeminiClient();
 
-  Future<Map<String, dynamic>> processInput(String text, {List<String> existingGroups = const []}) async {
+  Future<AiParsedContact> processInput(String text, {List<String> existingGroups = const []}) async {
     final prompt = '''
       Extract contact information from text and return JSON.
       
@@ -81,6 +82,7 @@ class GeminiService {
       throw Exception("Invalid AI response format");
     }
 
-    return jsonDecode(match) as Map<String, dynamic>;
+    final Map<String, dynamic> rawJson = jsonDecode(match) as Map<String, dynamic>;
+    return AiParsedContact.fromJson(rawJson);
   }
 }
