@@ -31,17 +31,6 @@ class LocaleProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _loadLocale() async {
-    // Keep this for backward compatibility or internal use if needed, 
-    // but the main initialization now happens in loadLocale(systemLocale)
-    final prefs = await SharedPreferences.getInstance();
-    final languageCode = prefs.getString(_prefsKey);
-    if (languageCode != null) {
-      _locale = Locale(languageCode);
-      notifyListeners();
-    }
-  }
-
   Future<void> setLocale(Locale locale) async {
     if (!['en', 'uk', 'de', 'fr', 'es', 'pl'].contains(locale.languageCode)) return;
 

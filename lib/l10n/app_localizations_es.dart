@@ -87,10 +87,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get loading => 'Cargando...';
 
   @override
-  String get welcomeBack => 'Welcome Back!';
+  String get welcomeBack => '¡Bienvenido de nuevo!';
 
   @override
-  String get loginSubtitle => 'Please sign in to your account';
+  String get loginSubtitle => 'Inicie sesión para continuar';
 
   @override
   String get login => 'Iniciar sesión';
@@ -552,22 +552,23 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get createAccount => 'Create Account';
+  String get createAccount => 'Crear cuenta';
 
   @override
-  String get registerSubtitle => 'Please fill in the details to register';
+  String get registerSubtitle =>
+      'Por favor complete los detalles para registrarse';
 
   @override
-  String get firstName => 'First Name';
+  String get firstName => 'Nombre';
 
   @override
-  String get lastName => 'Last Name';
+  String get lastName => 'Apellido';
 
   @override
-  String get dontHaveAccount => 'Don\'t have an account? Register';
+  String get dontHaveAccount => '¿No tienes cuenta? Regístrate';
 
   @override
-  String get alreadyHaveAccount => 'Already have an account? Login';
+  String get alreadyHaveAccount => '¿Ya tienes una cuenta? Inicia sesión';
 
   @override
   String get enterTextToRecognize => 'Introduzca texto para reconocer';
@@ -621,6 +622,20 @@ class AppLocalizationsEs extends AppLocalizations {
   String get onboardingContactMeTitle => 'Contactar con el soporte';
 
   @override
-  String get onboardingContactMeDesc =>
-      '¿Tienes sugerencias? Contáctame en ladikovmax@gmail.com';
+  String get onboardingContactMeDesc => 'ladikovmax@gmail.com';
+
+  @override
+  String get withoutYear => 'Sin año';
+
+  @override
+  String get orText => 'O';
+
+  @override
+  String get testNotification => 'Notificación de prueba';
+
+  @override
+  String get dailyReminderTitle => 'Mnemo PIM';
+
+  @override
+  String get dailyReminderBody => '¡No olvides revisar tus tareas hoy!';
 }

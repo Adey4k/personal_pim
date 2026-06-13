@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../l10n/app_localizations.dart';
 import '../services/notification_service.dart';
 
 class NotificationProvider extends ChangeNotifier {
@@ -23,6 +24,7 @@ class NotificationProvider extends ChangeNotifier {
       _reminderTime = TimeOfDay(hour: hour, minute: minute);
     }
     
+    await _notificationService.requestPermissions();
     _updateNotification();
     notifyListeners();
   }
@@ -37,12 +39,21 @@ class NotificationProvider extends ChangeNotifier {
   }
 
   Future<void> _updateNotification() async {
-    await _notificationService.scheduleDailyNotification(
-      id: 0,
-      title: 'Mnemo PIM',
-      body: 'Don\'t forget to check your tasks today!',
-      hour: _reminderTime.hour,
-      minute: _reminderTime.minute,
-    );
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lang = prefs.getString('selected_language') ?? 'en';
+      // Load localizations
+      final l10n = await AppLocalizations.delegate.load(Locale(lang));
+
+      await _notificationService.scheduleDailyNotification(
+        id: 0,
+        title: l10n.dailyReminderTitle,
+        body: l10n.dailyReminderBody,
+        hour: _reminderTime.hour,
+        minute: _reminderTime.minute,
+      );
+    } catch (e) {
+      print('Error scheduling notification: $e');
+    }
   }
 }

@@ -14,6 +14,7 @@ import '../providers/theme_provider.dart';
 import '../providers/notification_provider.dart';
 import '../services/firestore_service.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 import '../utils/constants.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -170,6 +171,14 @@ class SettingsPage extends StatelessWidget {
             },
           ),
 
+          ListTile(
+            leading: const Icon(Icons.notifications_active),
+            title: Text(l10n.testNotification),
+            onTap: () {
+              NotificationService().showTestNotification();
+            },
+          ),
+
           const Divider(),
 
           ListTile(
@@ -257,7 +266,18 @@ class SettingsPage extends StatelessWidget {
       final file = File('${tempDir.path}/contacts_export.json');
       await file.writeAsString(jsonString);
 
-      await Share.shareXFiles([XFile(file.path)], text: 'Personal PIM Contacts Export');
+      if (!context.mounted) return;
+
+      final box = context.findRenderObject() as RenderBox?;
+
+      await SharePlus.instance.share(
+        ShareParams(
+          text: 'Personal PIM Contacts Export',
+          subject: 'Contacts Export',
+          files: [XFile(file.path)],
+          sharePositionOrigin: box != null ? box.localToGlobal(Offset.zero) & box.size : null,
+        ),
+      );
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -289,6 +309,8 @@ class SettingsPage extends StatelessWidget {
       final contacts = jsonData.map((data) {
         return Contact.fromMap(Map<String, dynamic>.from(data), "");
       }).toList();
+
+      if (!context.mounted) return;
 
       final dbService = Provider.of<FirestoreService>(context, listen: false);
       await dbService.importContacts(contacts);
@@ -334,25 +356,26 @@ class SettingsPage extends StatelessWidget {
         return;
       }
 
-      if (context.mounted) {
-        final selectedContacts = await showModalBottomSheet<List<Contact>>(
-          context: context,
-          isScrollControlled: true,
-          useSafeArea: true,
-          builder: (context) => _ContactPickerSheet(
-            nativeContacts: nativeContacts,
-            l10n: l10n,
-          ),
-        );
+      if (!context.mounted) return;
 
-        if (selectedContacts != null && selectedContacts.isNotEmpty) {
-          final dbService = Provider.of<FirestoreService>(context, listen: false);
-          await dbService.importContacts(selectedContacts);
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.importSuccessful)),
-            );
-          }
+      final selectedContacts = await showModalBottomSheet<List<Contact>>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (context) => _ContactPickerSheet(
+          nativeContacts: nativeContacts,
+          l10n: l10n,
+        ),
+      );
+
+      if (selectedContacts != null && selectedContacts.isNotEmpty) {
+        if (!context.mounted) return;
+        final dbService = Provider.of<FirestoreService>(context, listen: false);
+        await dbService.importContacts(selectedContacts);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.importSuccessful)),
+          );
         }
       }
     } catch (e) {

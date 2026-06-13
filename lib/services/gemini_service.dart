@@ -42,8 +42,12 @@ class GeminiService {
   GeminiService({GeminiClient? client}) : _client = client ?? GoogleGeminiClient();
 
   Future<AiParsedContact> processInput(String text, {List<String> existingGroups = const []}) async {
+    final now = DateTime.now();
+    final todayStr = "${now.day.toString().padLeft(2, '0')}.${now.month.toString().padLeft(2, '0')}.${now.year}";
+    
     final prompt = '''
       Extract contact information from text and return JSON.
+      CURRENT DATE: $todayStr
       
       JSON FORMAT:
       {
@@ -58,12 +62,27 @@ class GeminiService {
       1. NO REASONING. NO COMMENTS. NO ANALYSIS.
       2. "name" MUST BE ONLY A HUMAN NAME. EMPTY IF NOT FOUND.
       3. Use technical keys for "fields": "phone", "email", "birthday".
-      4. "groups" should match existing: ${existingGroups.join(', ')}.
-      5. CUSTOM FIELDS: If you find useful info that doesn't fit technical keys (e.g. Telegram, Address, Job), CREATE a new field with a descriptive key in the language of the input.
+      4. "groups" MUST prefer existing: ${existingGroups.join(', ')}. If user says a synonym or variation of an existing group, USE THE EXISTING ONE.
+      5. PHONE NUMBERS: Keep the '+' if present. Remove ALL spaces, dashes, parentheses. ONLY digits allowed (e.g., "+380671234567" or "0671234567").
+      6. DATES: Use "DD.MM.YYYY" format. 
+         - Use the CURRENT YEAR (${now.year}) if the year is missing in text.
+         - For "birthday", if year is unknown, use "0000" as year (e.g., "01.01.0000").
+      7. BOOLEANS: Use "true" or "false" string values.
+      8. CUSTOM FIELDS: If you find useful info that doesn't fit technical keys (e.g. Telegram, Address, Job, Has Kids), CREATE a new field with a descriptive key in the language of the input.
+      9. DATA TYPES: Identify the most logical type for each field. Booleans for yes/no facts, dates for anniversaries, numbers for numeric IDs or phones.
 
       EXAMPLE:
-      Text: "John Doe, +123, john@me.com, lives in London, group Work"
-      Output: {"name": "John Doe", "groups": ["Work"], "fields": [{"key": "phone", "value": "+123", "type": "number"}, {"key": "email", "value": "john@me.com", "type": "text"}, {"key": "Address", "value": "London", "type": "text"}]}
+      Current Date: 13.06.2024
+      Text: "Іван Іванов, 067 123 45 67, народився 1 січня, має собаку, група Работа" (Existing groups: Робота)
+      Output: {
+        "name": "Іван Іванов", 
+        "groups": ["Робота"], 
+        "fields": [
+          {"key": "phone", "value": "0671234567", "type": "number"}, 
+          {"key": "birthday", "value": "01.01.0000", "type": "date"},
+          {"key": "має собаку", "value": "true", "type": "boolean"}
+        ]
+      }
 
       TEXT TO ANALYZE:
       $text

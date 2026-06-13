@@ -1263,6 +1263,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'ladikovmax@gmail.com'**
   String get onboardingContactMeDesc;
+
+  /// No description provided for @withoutYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Without year'**
+  String get withoutYear;
+
+  /// No description provided for @orText.
+  ///
+  /// In en, this message translates to:
+  /// **'OR'**
+  String get orText;
+
+  /// No description provided for @testNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Test Notification'**
+  String get testNotification;
+
+  /// No description provided for @dailyReminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mnemo PIM'**
+  String get dailyReminderTitle;
+
+  /// No description provided for @dailyReminderBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t forget to check your tasks today!'**
+  String get dailyReminderBody;
 }
 
 class _AppLocalizationsDelegate

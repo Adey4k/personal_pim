@@ -190,5 +190,18 @@
   "onboardingWidgetTitle": "Ajouter des widgets",
   "onboardingWidgetDesc": "N'oubliez pas d'ajouter notre widget à votre écran d'accueil pour voir les anniversaires à venir !",
   "onboardingContactMeTitle": "Contacter le support",
-  "onboardingContactMeDesc": "Vous avez des suggestions ? Contactez-moi à ladikovmax@gmail.com"
+  "onboardingContactMeDesc": "ladikovmax@gmail.com",
+  "withoutYear": "Sans année",
+  "welcomeBack": "Bon retour !",
+  "loginSubtitle": "Veuillez vous connecter pour continuer",
+  "createAccount": "Créer un compte",
+  "registerSubtitle": "Veuillez remplir les détails pour vous inscrire",
+  "firstName": "Prénom",
+  "lastName": "Nom de famille",
+  "dontHaveAccount": "Vous n'avez pas de compte ? S'inscrire",
+  "alreadyHaveAccount": "Vous avez déjà un compte ? Se connecter",
+  "orText": "OU",
+  "testNotification": "Notification de test",
+  "dailyReminderTitle": "Mnemo PIM",
+  "dailyReminderBody": "N'oubliez pas de vérifier vos tâches aujourd'hui !"
 }

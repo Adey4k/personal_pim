@@ -18,7 +18,7 @@ class HomeWidgetService {
       return {
         'id': c.id ?? '',
         'name': c.name,
-        'date': dateStr,
+        'date': dateStr.endsWith('.0000') ? dateStr.substring(0, 5) : dateStr,
         'age': age > 0 ? '$age' : '',
       };
     }).toList();
@@ -27,6 +27,67 @@ class HomeWidgetService {
     await HomeWidget.updateWidget(
       name: _androidBirthdayWidgetName,
       androidName: _androidBirthdayWidgetName,
+    );
+  }
+
+  static Future<void> updateCustomEvents(List<Contact> contacts) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final RegExp dateRegex = RegExp(r'^(\d{2})[\.\-](\d{2})[\.\-](\d{4})$');
+
+    // Group upcoming events by field name
+    // Event format: { eventType: [ { id, name, date, age }, ... ] }
+    Map<String, List<Map<String, String>>> groupedEvents = {};
+
+    for (var c in contacts) {
+      c.fields.forEach((key, value) {
+        if (key == AppKeys.birthday) return; // Skip birthdays
+
+        String? dateStr = _extractBirthdayDate(value);
+        if (dateStr.isEmpty) return;
+
+        final match = dateRegex.firstMatch(dateStr);
+        if (match != null) {
+          final age = _calculateUpcomingAge(dateStr, today);
+          
+          if (!groupedEvents.containsKey(key)) {
+            groupedEvents[key] = [];
+          }
+
+          groupedEvents[key]!.add({
+            'id': c.id ?? '',
+            'name': c.name,
+            'date': dateStr.endsWith('.0000') ? dateStr.substring(0, 5) : dateStr,
+            'age': age > 0 ? '$age' : '',
+          });
+        }
+      });
+    }
+
+    // Sort events within each group
+    for (var key in groupedEvents.keys) {
+      groupedEvents[key]!.sort((a, b) {
+        final dateA = _getNextBirthday(a['date'] ?? '', today);
+        final dateB = _getNextBirthday(b['date'] ?? '', today);
+        return dateA.compareTo(dateB);
+      });
+      // take top 20
+      groupedEvents[key] = groupedEvents[key]!.take(20).toList();
+    }
+
+    // Also pass available event types as a list to the widget
+    final eventTypes = groupedEvents.keys.toList();
+    eventTypes.sort();
+
+    final payload = {
+      'eventTypes': eventTypes,
+      'events': groupedEvents,
+    };
+
+    await HomeWidget.saveWidgetData<String>('custom_events_data', jsonEncode(payload));
+    await HomeWidget.updateWidget(
+      name: 'CustomEventWidgetProvider',
+      androidName: 'CustomEventWidgetProvider',
     );
   }
 

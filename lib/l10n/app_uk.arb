@@ -219,5 +219,10 @@
   "onboardingWidgetTitle": "Додайте віджети",
   "onboardingWidgetDesc": "Не забудьте додати віджет на головний екран телефону, щоб бачити наближення свят!",
   "onboardingContactMeTitle": "Зв'язок зі мною",
-  "onboardingContactMeDesc": "ladikovmax@gmail.com"
+  "onboardingContactMeDesc": "ladikovmax@gmail.com",
+  "withoutYear": "Без року",
+  "orText": "АБО",
+  "testNotification": "Тестове повідомлення",
+  "dailyReminderTitle": "Mnemo PIM",
+  "dailyReminderBody": "Не забудьте перевірити свої завдання сьогодні!"
 }

@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/contact.dart';
 import '../models/todo.dart';
 import '../utils/constants.dart';
-import 'home_widget_service.dart';
 
 class FirestoreService {
   final FirebaseAuth _authInstance;

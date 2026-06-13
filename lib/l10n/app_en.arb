@@ -233,5 +233,10 @@
   "onboardingWidgetTitle": "Add Widgets",
   "onboardingWidgetDesc": "Don't forget to add our widget to your home screen to see upcoming birthdays!",
   "onboardingContactMeTitle": "Contact Support",
-  "onboardingContactMeDesc": "ladikovmax@gmail.com"
+  "onboardingContactMeDesc": "ladikovmax@gmail.com",
+  "withoutYear": "Without year",
+  "orText": "OR",
+  "testNotification": "Test Notification",
+  "dailyReminderTitle": "Mnemo PIM",
+  "dailyReminderBody": "Don't forget to check your tasks today!"
 }

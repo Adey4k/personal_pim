@@ -6,5 +6,8 @@
     <string name="birthday_widget_title">Дні народження</string>
     <string name="birthday_widget_name">Дні народження</string>
     <string name="birthday_empty">Немає найближчих днів народження</string>
+    <string name="birthday_widget_desc">Показує найближчі дні народження</string>
     <string name="app_name">Mnemo PIM</string>
+    <string name="custom_event_widget_name">Custom Events</string>
+    <string name="custom_event_widget_desc">Track custom events</string>
 </resources>

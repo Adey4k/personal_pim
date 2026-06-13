@@ -6,7 +6,9 @@
     android:minResizeWidth="180dp"
     android:minResizeHeight="40dp"
     android:updatePeriodMillis="3600000"
-    android:previewImage="@mipmap/ic_launcher"
+    android:previewImage="@drawable/preview_birthday_widget"
+    android:previewLayout="@layout/birthday_widget"
+    android:description="@string/birthday_widget_desc"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen">
 </appwidget-provider>

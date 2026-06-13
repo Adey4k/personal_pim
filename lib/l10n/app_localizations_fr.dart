@@ -87,10 +87,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get loading => 'Chargement...';
 
   @override
-  String get welcomeBack => 'Welcome Back!';
+  String get welcomeBack => 'Bon retour !';
 
   @override
-  String get loginSubtitle => 'Please sign in to your account';
+  String get loginSubtitle => 'Veuillez vous connecter pour continuer';
 
   @override
   String get login => 'Connexion';
@@ -549,22 +549,23 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get createAccount => 'Create Account';
+  String get createAccount => 'Créer un compte';
 
   @override
-  String get registerSubtitle => 'Please fill in the details to register';
+  String get registerSubtitle =>
+      'Veuillez remplir les détails pour vous inscrire';
 
   @override
-  String get firstName => 'First Name';
+  String get firstName => 'Prénom';
 
   @override
-  String get lastName => 'Last Name';
+  String get lastName => 'Nom de famille';
 
   @override
-  String get dontHaveAccount => 'Don\'t have an account? Register';
+  String get dontHaveAccount => 'Vous n\'avez pas de compte ? S\'inscrire';
 
   @override
-  String get alreadyHaveAccount => 'Already have an account? Login';
+  String get alreadyHaveAccount => 'Vous avez déjà un compte ? Se connecter';
 
   @override
   String get enterTextToRecognize => 'Entrez le texte à reconnaître';
@@ -618,6 +619,21 @@ class AppLocalizationsFr extends AppLocalizations {
   String get onboardingContactMeTitle => 'Contacter le support';
 
   @override
-  String get onboardingContactMeDesc =>
-      'Vous avez des suggestions ? Contactez-moi à ladikovmax@gmail.com';
+  String get onboardingContactMeDesc => 'ladikovmax@gmail.com';
+
+  @override
+  String get withoutYear => 'Sans année';
+
+  @override
+  String get orText => 'OU';
+
+  @override
+  String get testNotification => 'Notification de test';
+
+  @override
+  String get dailyReminderTitle => 'Mnemo PIM';
+
+  @override
+  String get dailyReminderBody =>
+      'N\'oubliez pas de vérifier vos tâches aujourd\'hui !';
 }

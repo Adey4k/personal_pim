@@ -13,6 +13,7 @@ class DynamicFieldWidget extends StatelessWidget {
   final Function(DateTime) onDatePicked;
   final Function(bool) onBooleanChanged;
   final Function(bool) onRemindYearlyChanged;
+  final Function(bool) onWithoutYearChanged;
   final Function(List<String>) onRemindBeforeChanged;
 
   const DynamicFieldWidget({
@@ -25,6 +26,7 @@ class DynamicFieldWidget extends StatelessWidget {
     required this.onDatePicked,
     required this.onBooleanChanged,
     required this.onRemindYearlyChanged,
+    required this.onWithoutYearChanged,
     required this.onRemindBeforeChanged,
   });
 
@@ -170,7 +172,9 @@ class DynamicFieldWidget extends StatelessWidget {
                 child: Text(
                   field.valueController.text.isEmpty
                       ? l10n.selectDate
-                      : field.valueController.text,
+                      : field.valueController.text.endsWith('.0000') 
+                          ? field.valueController.text.substring(0, 5)
+                          : field.valueController.text,
                   style: TextStyle(
                     color: field.valueController.text.isEmpty
                         ? Colors.grey
@@ -182,6 +186,26 @@ class DynamicFieldWidget extends StatelessWidget {
             ),
             if (field.valueController.text.isNotEmpty) ...[
               const SizedBox(height: 4),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.withoutYear,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ),
+                  SizedBox(
+                    height: 24,
+                    child: Transform.scale(
+                      scale: 0.7,
+                      child: Switch(
+                        value: field.valueController.text.endsWith('.0000'),
+                        onChanged: onWithoutYearChanged,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               Row(
                 children: [
                   Expanded(

@@ -190,5 +190,18 @@
   "onboardingWidgetTitle": "Dodaj widżety",
   "onboardingWidgetDesc": "Nie zapomnij dodać naszego widżetu do ekranu głównego, aby widzieć nadchodzące urodziny!",
   "onboardingContactMeTitle": "Kontakt z pomocą",
-  "onboardingContactMeDesc": "Masz propozycje? Skontaktuj się ze mną pod adresem ladikovmax@gmail.com"
+  "onboardingContactMeDesc": "Masz propozycje? Skontaktuj się ze mną pod adresem ladikovmax@gmail.com",
+  "withoutYear": "Bez roku",
+  "welcomeBack": "Witamy ponownie!",
+  "loginSubtitle": "Zaloguj się, aby kontynuować",
+  "createAccount": "Utwórz konto",
+  "registerSubtitle": "Wypełnij dane, aby się zarejestrować",
+  "firstName": "Imię",
+  "lastName": "Nazwisko",
+  "dontHaveAccount": "Nie masz konta? Zarejestruj się",
+  "alreadyHaveAccount": "Masz już konto? Zaloguj się",
+  "orText": "LUB",
+  "testNotification": "Powiadomienie testowe",
+  "dailyReminderTitle": "Mnemo PIM",
+  "dailyReminderBody": "Nie zapomnij dzisiaj sprawdzić swoich zadań!"
 }

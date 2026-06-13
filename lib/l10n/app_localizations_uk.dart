@@ -615,4 +615,20 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get onboardingContactMeDesc => 'ladikovmax@gmail.com';
+
+  @override
+  String get withoutYear => 'Без року';
+
+  @override
+  String get orText => 'АБО';
+
+  @override
+  String get testNotification => 'Тестове повідомлення';
+
+  @override
+  String get dailyReminderTitle => 'Mnemo PIM';
+
+  @override
+  String get dailyReminderBody =>
+      'Не забудьте перевірити свої завдання сьогодні!';
 }

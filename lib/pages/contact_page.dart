@@ -156,7 +156,7 @@ class _ContactPageState extends State<ContactPage> {
   void _startTutorialIfNeeded() {
     final tutorialProvider = Provider.of<TutorialProvider>(context, listen: false);
     if (!tutorialProvider.isContactTutorialShown) {
-      ShowCaseWidget.of(context).startShowCase([_aiKey]);
+      ShowcaseView.get().startShowCase([_aiKey]);
       tutorialProvider.markContactTutorialAsShown();
     }
   }
@@ -165,7 +165,9 @@ class _ContactPageState extends State<ContactPage> {
   void dispose() {
     _nameController.dispose();
     _groupInputController.dispose();
-    for (var field in _fields) field.dispose();
+    for (var field in _fields) {
+      field.dispose();
+    }
     super.dispose();
   }
 
@@ -197,8 +199,22 @@ class _ContactPageState extends State<ContactPage> {
 
         if (aiContact.groups.isNotEmpty) {
           for (String g in aiContact.groups) {
-            if (!_availableGroups.contains(g) && _availableGroups.length < 10) _availableGroups.add(g);
-            if (!_selectedGroups.contains(g) && _selectedGroups.length < 10) _selectedGroups.add(g);
+            // Case-insensitive check for existing group
+            String? existingMatch;
+            try {
+              existingMatch = _availableGroups.firstWhere(
+                (element) => element.toLowerCase() == g.toLowerCase()
+              );
+            } catch (_) {}
+
+            final groupToAdd = existingMatch ?? g;
+
+            if (!_availableGroups.contains(groupToAdd) && _availableGroups.length < 10) {
+              _availableGroups.add(groupToAdd);
+            }
+            if (!_selectedGroups.contains(groupToAdd) && _selectedGroups.length < 10) {
+              _selectedGroups.add(groupToAdd);
+            }
           }
           final gIdx = _fields.indexWhere((f) => f.keyController.text == AppKeys.groups);
           if (gIdx != -1) {
@@ -289,15 +305,19 @@ class _ContactPageState extends State<ContactPage> {
                   );
                 } else {
                   if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.recognitionError), backgroundColor: Colors.red),
-                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.recognitionError), backgroundColor: Colors.red),
+                    );
+                  }
                 }
               } catch (e) {
                 if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('${l10n.error}: $e'), backgroundColor: Colors.red),
-                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${l10n.error}: $e'), backgroundColor: Colors.red),
+                  );
+                }
               }
             } else {
               await Provider.of<SpeechService>(context, listen: false).stop();
@@ -359,7 +379,11 @@ class _ContactPageState extends State<ContactPage> {
                 DropdownMenuItem(value: FieldType.date, child: Text(l10n.dateType)),
                 DropdownMenuItem(value: FieldType.boolean, child: Text(l10n.booleanType)),
               ],
-              onChanged: (val) { if (val != null) setDialogState(() => selectedType = val); },
+              onChanged: (val) {
+                if (val != null) {
+                  setDialogState(() => selectedType = val);
+                }
+              },
             ),
           ],
         ),
@@ -395,16 +419,43 @@ class _ContactPageState extends State<ContactPage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(leading: const Icon(Icons.text_fields), title: Text(l10n.textType), onTap: () { setState(() => _fields[index].type = FieldType.text); Navigator.pop(context); }),
-            ListTile(leading: const Icon(Icons.numbers), title: Text(l10n.numberType), onTap: () { setState(() => _fields[index].type = FieldType.number); Navigator.pop(context); }),
-            ListTile(leading: const Icon(Icons.calendar_today), title: Text(l10n.dateType), onTap: () { setState(() => _fields[index].type = FieldType.date); Navigator.pop(context); }),
-            ListTile(leading: const Icon(Icons.check_box), title: Text(l10n.booleanType), onTap: () {
-              setState(() {
-                _fields[index].type = FieldType.boolean;
-                if (_fields[index].valueController.text.isEmpty) _fields[index].valueController.text = "false";
-              });
-              Navigator.pop(context);
-            }),
+            ListTile(
+              leading: const Icon(Icons.text_fields),
+              title: Text(l10n.textType),
+              onTap: () {
+                setState(() => _fields[index].type = FieldType.text);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.numbers),
+              title: Text(l10n.numberType),
+              onTap: () {
+                setState(() => _fields[index].type = FieldType.number);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.calendar_today),
+              title: Text(l10n.dateType),
+              onTap: () {
+                setState(() => _fields[index].type = FieldType.date);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.check_box),
+              title: Text(l10n.booleanType),
+              onTap: () {
+                setState(() {
+                  _fields[index].type = FieldType.boolean;
+                  if (_fields[index].valueController.text.isEmpty) {
+                    _fields[index].valueController.text = "false";
+                  }
+                });
+                Navigator.pop(context);
+              },
+            ),
           ],
         ),
       ),
@@ -448,9 +499,15 @@ class _ContactPageState extends State<ContactPage> {
               title: Text(l10n.deleteFieldTitle),
               content: Text(l10n.deleteFieldUsageWarning(usageCount)),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(l10n.cancel),
+                ),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                  ),
                   onPressed: () => Navigator.pop(context, true),
                   child: Text(l10n.delete),
                 ),
@@ -468,7 +525,12 @@ class _ContactPageState extends State<ContactPage> {
       } catch (e) {
         if (!mounted) return;
         setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${l10n.error}: $e'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.error}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
         return;
       }
     }
@@ -492,8 +554,18 @@ class _ContactPageState extends State<ContactPage> {
         title: Text(l10n.deleteContactTitle),
         content: Text(l10n.deleteContactConfirmation(widget.contact?.name ?? l10n.noName)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
-          ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white), onPressed: () => Navigator.pop(context, true), child: Text(l10n.delete)),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.delete),
+          ),
         ],
       ),
     );
@@ -502,14 +574,23 @@ class _ContactPageState extends State<ContactPage> {
       setState(() => _isSaving = true);
       try {
         final dbService = Provider.of<FirestoreService>(context, listen: false);
-        if (widget.contact?.id != null) await dbService.deleteContact(widget.contact!.id!);
+        if (widget.contact?.id != null) {
+          await dbService.deleteContact(widget.contact!.id!);
+        }
         if (!mounted) return;
-        Navigator.pop(context); 
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.contactDeleted)));
-      } catch (e) { 
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.contactDeleted)),
+        );
+      } catch (e) {
         if (!mounted) return;
-        setState(() => _isSaving = false); 
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${l10n.error}: $e'), backgroundColor: Colors.red)); 
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.error}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -576,8 +657,20 @@ class _ContactPageState extends State<ContactPage> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-          ElevatedButton(onPressed: () { setState(() { _fields[index].keyController.text = renameController.text.trim(); _fields[index].isAiGenerated = false; }); Navigator.pop(context); }, child: Text(l10n.save)),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _fields[index].keyController.text = renameController.text.trim();
+                _fields[index].isAiGenerated = false;
+              });
+              Navigator.pop(context);
+            },
+            child: Text(l10n.save),
+          ),
         ],
       ),
     );
@@ -587,7 +680,15 @@ class _ContactPageState extends State<ContactPage> {
     final l10n = AppLocalizations.of(context)!;
     final name = _nameController.text.trim();
     final nameError = Validators.validateContactName(name, widget.existingNames, widget.contact?.name);
-    if (nameError != null) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${l10n.error}: $nameError'), backgroundColor: Colors.red)); return; }
+    if (nameError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${l10n.error}: $nameError'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
     setState(() => _isSaving = true);
     try {
       Map<String, dynamic> contactData = { AppKeys.name: name };
@@ -610,17 +711,29 @@ class _ContactPageState extends State<ContactPage> {
           }
         }
       }
-      if (widget.contact != null) { for (var key in _deletedFields) contactData[key] = FieldValue.delete(); }
+      if (widget.contact != null) {
+        for (var key in _deletedFields) {
+          contactData[key] = FieldValue.delete();
+        }
+      }
       final dbService = Provider.of<FirestoreService>(context, listen: false);
       final savedContact = Contact(id: widget.contact?.id, fields: contactData, orderIndex: widget.contact?.orderIndex ?? 0);
-      if (widget.contact == null) await dbService.addContact(savedContact);
-      else await dbService.updateContact(savedContact);
+      if (widget.contact == null) {
+        await dbService.addContact(savedContact);
+      } else {
+        await dbService.updateContact(savedContact);
+      }
       if (!mounted) return;
       Navigator.pop(context);
-    } catch (e) { 
+    } catch (e) {
       if (!mounted) return;
-      setState(() => _isSaving = false); 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${l10n.error}: $e'), backgroundColor: Colors.red)); 
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${l10n.error}: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -709,18 +822,45 @@ class _ContactPageState extends State<ContactPage> {
         onAddGroup: (val, setModalState) {
           String newGroup = val.trim();
           if (newGroup.isEmpty) return;
-          if (newGroup.contains(',')) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.groupNameNoCommas), backgroundColor: Colors.red)); return; }
-          if (!_availableGroups.contains(newGroup) && _availableGroups.length >= 10) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.max10Groups))); return; }
-          setState(() { _availableGroups.add(newGroup); if (!_selectedGroups.contains(newGroup) && _selectedGroups.length < 10) _selectedGroups.add(newGroup); field.valueController.text = _selectedGroups.join(', '); field.isAiGenerated = false; });
+          if (newGroup.contains(',')) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(l10n.groupNameNoCommas),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
+          if (!_availableGroups.contains(newGroup) && _availableGroups.length >= 10) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.max10Groups)),
+            );
+            return;
+          }
+          setState(() {
+            _availableGroups.add(newGroup);
+            if (!_selectedGroups.contains(newGroup) && _selectedGroups.length < 10) {
+              _selectedGroups.add(newGroup);
+            }
+            field.valueController.text = _selectedGroups.join(', ');
+            field.isAiGenerated = false;
+          });
           setModalState(() {});
           _groupInputController.clear();
         },
         onToggleGroup: (group, val, setModalState) {
           setState(() {
             if (val == true) {
-              if (_selectedGroups.length < 10) _selectedGroups.add(group);
-              else ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.max10SelectedGroups)));
-            } else { _selectedGroups.remove(group); }
+              if (_selectedGroups.length < 10) {
+                _selectedGroups.add(group);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.max10SelectedGroups)),
+                );
+              }
+            } else {
+              _selectedGroups.remove(group);
+            }
             field.valueController.text = _selectedGroups.join(', ');
             field.isAiGenerated = false;
           });
@@ -790,6 +930,20 @@ class _ContactPageState extends State<ContactPage> {
                     onDatePicked: (picked) => setState(() { field.valueController.text = "${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}"; field.isAiGenerated = false; }),
                     onBooleanChanged: (val) => setState(() { field.valueController.text = val.toString(); field.isAiGenerated = false; }),
                     onRemindYearlyChanged: (val) => setState(() => field.remindYearly = val),
+                    onWithoutYearChanged: (val) => setState(() {
+                      if (val) {
+                        String current = field.valueController.text;
+                        if (current.length == 10) {
+                          field.valueController.text = "${current.substring(0, 6)}0000";
+                        }
+                      } else {
+                        String current = field.valueController.text;
+                        if (current.length == 10 && current.endsWith('0000')) {
+                          field.valueController.text = "${current.substring(0, 6)}${DateTime.now().year}";
+                        }
+                      }
+                      field.isAiGenerated = false;
+                    }),
                     onRemindBeforeChanged: (val) => setState(() => field.remindBefore = val),
                   );
                 }).toList(),

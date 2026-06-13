@@ -87,10 +87,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get loading => 'Ładowanie...';
 
   @override
-  String get welcomeBack => 'Welcome Back!';
+  String get welcomeBack => 'Witamy ponownie!';
 
   @override
-  String get loginSubtitle => 'Please sign in to your account';
+  String get loginSubtitle => 'Zaloguj się, aby kontynuować';
 
   @override
   String get login => 'Zaloguj się';
@@ -545,22 +545,22 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String get createAccount => 'Create Account';
+  String get createAccount => 'Utwórz konto';
 
   @override
-  String get registerSubtitle => 'Please fill in the details to register';
+  String get registerSubtitle => 'Wypełnij dane, aby się zarejestrować';
 
   @override
-  String get firstName => 'First Name';
+  String get firstName => 'Imię';
 
   @override
-  String get lastName => 'Last Name';
+  String get lastName => 'Nazwisko';
 
   @override
-  String get dontHaveAccount => 'Don\'t have an account? Register';
+  String get dontHaveAccount => 'Nie masz konta? Zarejestruj się';
 
   @override
-  String get alreadyHaveAccount => 'Already have an account? Login';
+  String get alreadyHaveAccount => 'Masz już konto? Zaloguj się';
 
   @override
   String get enterTextToRecognize => 'Wprowadź tekst do rozpoznania';
@@ -616,4 +616,20 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get onboardingContactMeDesc =>
       'Masz propozycje? Skontaktuj się ze mną pod adresem ladikovmax@gmail.com';
+
+  @override
+  String get withoutYear => 'Bez roku';
+
+  @override
+  String get orText => 'LUB';
+
+  @override
+  String get testNotification => 'Powiadomienie testowe';
+
+  @override
+  String get dailyReminderTitle => 'Mnemo PIM';
+
+  @override
+  String get dailyReminderBody =>
+      'Nie zapomnij dzisiaj sprawdzić swoich zadań!';
 }

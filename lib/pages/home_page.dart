@@ -7,9 +7,7 @@ import '../widgets/home/search_filter_bar.dart';
 import '../widgets/home/column_settings_sheet.dart';
 import '../widgets/home/contact_table.dart';
 import 'contact_page.dart';
-import '../services/gemini_service.dart';
 import '../services/home_widget_service.dart';
-import '../services/speech_service.dart';
 import '../services/firestore_service.dart';
 import '../models/contact.dart';
 import '../utils/constants.dart';
@@ -17,6 +15,7 @@ import '../utils/validators.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/tutorial_provider.dart';
 import '../providers/contacts_provider.dart';
+import '../services/notification_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -44,15 +43,17 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    ShowcaseView.register();
     // Getting firestore service from provider safely in initState
     _contactsStream = Provider.of<FirestoreService>(context, listen: false).getContactsStream();
+    NotificationService().requestPermissions();
   }
 
   void _startTutorialIfNeeded() async {
     final tutorialProvider = Provider.of<TutorialProvider>(context, listen: false);
     if (!tutorialProvider.isHomeTutorialShown) {
       try {
-        ShowCaseWidget.of(context).startShowCase([
+        ShowcaseView.get().startShowCase([
           _tableKey,
           _addKey,
           _calendarKey,
@@ -128,8 +129,15 @@ class _HomePageState extends State<HomePage> {
     for (var contact in contacts) {
       for (var entry in contact.fields.entries) {
         String key = entry.key;
-        String value = entry.value?.toString() ?? "";
-        if (value.trim().isNotEmpty && !types.containsKey(key)) {
+        String valueStr = "";
+        
+        if (entry.value is Map) {
+          valueStr = entry.value['date']?.toString() ?? "";
+        } else {
+          valueStr = entry.value?.toString() ?? "";
+        }
+
+        if (valueStr.trim().isNotEmpty && !types.containsKey(key)) {
           if (key == AppKeys.name ||
               key == AppKeys.phone ||
               key == AppKeys.email ||
@@ -138,7 +146,7 @@ class _HomePageState extends State<HomePage> {
             continue;
           }
 
-          types[key] = Validators.inferType(value);
+          types[key] = Validators.inferType(valueStr);
         }
       }
     }
@@ -208,6 +216,7 @@ class _HomePageState extends State<HomePage> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             provider.syncColumnsWithData(contacts);
             HomeWidgetService.updateBirthdays(contacts);
+            HomeWidgetService.updateCustomEvents(contacts);
             _startTutorialIfNeeded();
           });
         }

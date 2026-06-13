@@ -42,11 +42,12 @@ class AiParsedContact {
         if (key.contains('reason') || key.contains('analys') || key.contains('note')) continue;
 
         FieldType type = FieldType.text;
-        if (typeStr == 'number') {
+        typeStr = typeStr.toLowerCase();
+        if (typeStr == 'number' || typeStr == 'phone') {
           type = FieldType.number;
         } else if (typeStr == 'date') {
           type = FieldType.date;
-        } else if (typeStr == 'boolean') {
+        } else if (typeStr == 'boolean' || typeStr == 'bool') {
           type = FieldType.boolean;
         }
 

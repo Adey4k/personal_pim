@@ -190,5 +190,18 @@
   "onboardingWidgetTitle": "Añadir widgets",
   "onboardingWidgetDesc": "No olvides añadir nuestro widget a tu pantalla de inicio para ver los próximos cumpleaños.",
   "onboardingContactMeTitle": "Contactar con el soporte",
-  "onboardingContactMeDesc": "¿Tienes sugerencias? Contáctame en ladikovmax@gmail.com"
+  "onboardingContactMeDesc": "ladikovmax@gmail.com",
+  "withoutYear": "Sin año",
+  "welcomeBack": "¡Bienvenido de nuevo!",
+  "loginSubtitle": "Inicie sesión para continuar",
+  "createAccount": "Crear cuenta",
+  "registerSubtitle": "Por favor complete los detalles para registrarse",
+  "firstName": "Nombre",
+  "lastName": "Apellido",
+  "dontHaveAccount": "¿No tienes cuenta? Regístrate",
+  "alreadyHaveAccount": "¿Ya tienes una cuenta? Inicia sesión",
+  "orText": "O",
+  "testNotification": "Notificación de prueba",
+  "dailyReminderTitle": "Mnemo PIM",
+  "dailyReminderBody": "¡No olvides revisar tus tareas hoy!"
 }

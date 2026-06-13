@@ -142,6 +142,10 @@ class ContactTable extends StatelessWidget {
                                 } else {
                                   value = rawValue?.toString() ?? '';
                                 }
+                                
+                                if (value.endsWith('.0000')) {
+                                  value = value.substring(0, 5);
+                                }
 
                                 Widget cellContent;
 

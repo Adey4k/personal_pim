@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
-import 'package:showcaseview/showcaseview.dart';
 import 'firebase_options.dart';
 import 'package:home_widget/home_widget.dart';
 import 'pages/login_page.dart';
@@ -46,13 +44,13 @@ void main() async {
   final themeProvider = ThemeProvider();
   await themeProvider.init();
 
+  await NotificationService().init();
+
   final notificationProvider = NotificationProvider();
   await notificationProvider.init();
 
   final tutorialProvider = TutorialProvider();
   await tutorialProvider.init();
-
-  await NotificationService().init();
 
   HomeWidget.registerInteractivityCallback(interactiveCallback);
 
@@ -87,9 +85,8 @@ class MyApp extends StatelessWidget {
     final localeProvider = Provider.of<LocaleProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
 
-    return ShowCaseWidget(
-      builder: (context) => MaterialApp(
-        title: 'Personal PIM',
+    return MaterialApp(
+        onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
             seedColor: themeProvider.seedColor,
@@ -123,8 +120,7 @@ class MyApp extends StatelessWidget {
           );
         },
         home: const AppRoot(),
-      ),
-    );
+      );
   }
 }
 
@@ -162,7 +158,6 @@ class AppNavigationHandler extends StatefulWidget {
 
 class _AppNavigationHandlerState extends State<AppNavigationHandler>
     with WidgetsBindingObserver {
-  bool _initialUriHandled = false;
 
   @override
   void initState() {
@@ -187,7 +182,6 @@ class _AppNavigationHandlerState extends State<AppNavigationHandler>
     final uri = await HomeWidget.initiallyLaunchedFromHomeWidget();
     if (uri != null) {
       _handleUri(uri);
-      _initialUriHandled = true;
     }
     HomeWidget.widgetClicked.listen(_handleUri);
   }

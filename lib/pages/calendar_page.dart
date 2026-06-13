@@ -23,7 +23,7 @@ class _CalendarPageState extends State<CalendarPage> {
   late final Stream<List<Contact>> _contactsStream;
   late final Stream<List<Todo>> _todosStream;
   
-  CalendarFormat _calendarFormat = CalendarFormat.month;
+  final CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
@@ -82,7 +82,7 @@ class _CalendarPageState extends State<CalendarPage> {
           final isBirthday = key == AppKeys.birthday;
           
           int? calculatedAge;
-          if (isBirthday && year != 0) {
+          if (year != 0) {
             calculatedAge = DateTime.now().year - year;
           }
 
@@ -599,7 +599,9 @@ class _CalendarPageState extends State<CalendarPage> {
             : AppKeys.getLocalizedLabel(event.fieldName, l10n),
         ),
         trailing: Text(
-          DateFormat.yMMMMd(Localizations.localeOf(context).toString()).format(event.date),
+          event.date.year == 0
+            ? DateFormat.MMMMd(Localizations.localeOf(context).toString()).format(event.date)
+            : DateFormat.yMMMMd(Localizations.localeOf(context).toString()).format(event.date),
           style: const TextStyle(fontSize: 12, color: Colors.grey),
         ),
       ),
