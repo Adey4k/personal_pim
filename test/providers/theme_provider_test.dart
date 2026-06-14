@@ -1,19 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
 import 'package:personal_pim/providers/theme_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'theme_provider_test.mocks.dart';
-
-@GenerateMocks([SharedPreferences])
 void main() {
   late ThemeProvider themeProvider;
-  late MockSharedPreferences mockPrefs;
 
   setUp(() async {
-    mockPrefs = MockSharedPreferences();
     SharedPreferences.setMockInitialValues({});
     themeProvider = ThemeProvider();
   });
@@ -34,7 +27,7 @@ void main() {
 
       expect(themeProvider.themeMode, ThemeMode.dark);
       expect(notified, true);
-      
+
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getInt('theme_mode'), ThemeMode.dark.index);
     });
@@ -52,7 +45,7 @@ void main() {
       expect(notified, true);
 
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getInt('theme_color'), newColor.value);
+      expect(prefs.getInt('theme_color'), newColor.toARGB32());
     });
   });
 }

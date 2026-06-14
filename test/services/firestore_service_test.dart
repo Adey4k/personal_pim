@@ -4,8 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:personal_pim/services/firestore_service.dart';
-import 'package:personal_pim/models/contact.dart';
-import 'package:personal_pim/models/todo.dart';
 
 import 'firestore_service_test.mocks.dart';
 
@@ -30,11 +28,11 @@ void main() {
       mockDb = MockFirebaseFirestore();
       mockAuth = MockFirebaseAuth();
       mockUser = MockUser();
-      
+
       when(mockAuth.currentUser).thenReturn(mockUser);
       when(mockUser.uid).thenReturn('user123');
-      
-      firestoreService = FirestoreService();
+
+      firestoreService = FirestoreService(auth: mockAuth, firestore: mockDb);
     });
 
     test('addContact calls add on the correct collection', () async {

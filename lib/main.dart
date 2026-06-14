@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -15,6 +17,7 @@ import 'providers/theme_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/tutorial_provider.dart';
 import 'providers/contacts_provider.dart';
+import 'models/contact.dart';
 import 'services/notification_service.dart';
 import 'services/firestore_service.dart';
 import 'services/gemini_service.dart';
@@ -158,6 +161,7 @@ class AppNavigationHandler extends StatefulWidget {
 
 class _AppNavigationHandlerState extends State<AppNavigationHandler>
     with WidgetsBindingObserver {
+  StreamSubscription<List<Contact>>? _contactReminderSubscription;
 
   @override
   void initState() {
@@ -165,11 +169,16 @@ class _AppNavigationHandlerState extends State<AppNavigationHandler>
     WidgetsBinding.instance.addObserver(this);
     HomeWidget.setAppGroupId('group.com.ladikov.personal_pim');
     _checkLaunchedFromWidget();
+    _startContactReminderSync();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    final subscription = _contactReminderSubscription;
+    if (subscription != null) {
+      unawaited(subscription.cancel());
+    }
     super.dispose();
   }
 
@@ -184,6 +193,23 @@ class _AppNavigationHandlerState extends State<AppNavigationHandler>
       _handleUri(uri);
     }
     HomeWidget.widgetClicked.listen(_handleUri);
+  }
+
+  void _startContactReminderSync() {
+    final firestore = Provider.of<FirestoreService>(context, listen: false);
+    final notificationProvider =
+        Provider.of<NotificationProvider>(context, listen: false);
+
+    _contactReminderSubscription = firestore.getContactsStream().listen(
+      (contacts) {
+        unawaited(
+          notificationProvider.scheduleContactEventNotifications(contacts),
+        );
+      },
+      onError: (error) {
+        debugPrint('Contact reminder sync error: $error');
+      },
+    );
   }
 
   void _handleUri(Uri? uri) {

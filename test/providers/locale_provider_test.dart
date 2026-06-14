@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
 import 'package:personal_pim/providers/locale_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'locale_provider_test.mocks.dart';
 
 @GenerateMocks([SharedPreferences])
 void main() {

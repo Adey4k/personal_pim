@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
 import 'package:personal_pim/pages/contact_page.dart';
 import 'package:personal_pim/services/firestore_service.dart';
 import 'package:personal_pim/l10n/app_localizations.dart';
@@ -9,7 +8,6 @@ import 'package:personal_pim/models/contact.dart';
 import 'package:personal_pim/utils/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'contact_page_test.mocks.dart';
 
 @GenerateMocks([FirestoreService])
 void main() {

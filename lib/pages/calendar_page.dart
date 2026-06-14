@@ -22,7 +22,7 @@ class _CalendarPageState extends State<CalendarPage> {
   late final FirestoreService _dbService;
   late final Stream<List<Contact>> _contactsStream;
   late final Stream<List<Todo>> _todosStream;
-  
+
   final CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
@@ -30,38 +30,53 @@ class _CalendarPageState extends State<CalendarPage> {
   @override
   void initState() {
     super.initState();
-    _selectedDay = DateTime(_focusedDay.year, _focusedDay.month, _focusedDay.day);
+    _selectedDay = DateTime(
+      _focusedDay.year,
+      _focusedDay.month,
+      _focusedDay.day,
+    );
     _dbService = Provider.of<FirestoreService>(context, listen: false);
     _contactsStream = _dbService.getContactsStream();
     _todosStream = _dbService.getTodosStream();
   }
 
-  List<dynamic> _getEventsForDay(DateTime day, Map<DateTime, List<dynamic>> events) {
+  List<dynamic> _getEventsForDay(
+    DateTime day,
+    Map<DateTime, List<dynamic>> events,
+  ) {
     final date = DateTime(day.year, day.month, day.day);
     final recurringDate = DateTime(0, day.month, day.day);
-    
+
     final List<dynamic> dayEvents = [];
     if (events.containsKey(date)) dayEvents.addAll(events[date]!);
-    if (events.containsKey(recurringDate)) dayEvents.addAll(events[recurringDate]!);
-    
+    if (events.containsKey(recurringDate)) {
+      dayEvents.addAll(events[recurringDate]!);
+    }
+
     return dayEvents;
   }
 
-  Map<DateTime, List<dynamic>> _parseToEvents(List<Contact> contacts, List<Todo> todos) {
-    debugPrint("Parsing events: ${contacts.length} contacts, ${todos.length} todos");
+  Map<DateTime, List<dynamic>> _parseToEvents(
+    List<Contact> contacts,
+    List<Todo> todos,
+  ) {
+    debugPrint(
+      "Parsing events: ${contacts.length} contacts, ${todos.length} todos",
+    );
     final Map<DateTime, List<dynamic>> newEvents = {};
-    
+
     // Parse Contacts
     final dateRegex = RegExp(r'^(\d{2})\.(\d{2})\.(\d{4})$');
     for (var contact in contacts) {
       contact.fields.forEach((key, value) {
         String valStr = "";
-        bool remindYearly = false;
+        bool remindYearly = key == AppKeys.birthday;
         List<String> remindBefore = ["day"];
 
         if (value is Map) {
           valStr = value['date']?.toString() ?? "";
-          remindYearly = value['remindYearly'] as bool? ?? false;
+          remindYearly =
+              value['remindYearly'] as bool? ?? (key == AppKeys.birthday);
           final rb = value['remindBefore'];
           if (rb is List) {
             remindBefore = List<String>.from(rb);
@@ -77,10 +92,10 @@ class _CalendarPageState extends State<CalendarPage> {
           final day = int.parse(match.group(1)!);
           final month = int.parse(match.group(2)!);
           final year = int.parse(match.group(3)!);
-          
+
           final eventDate = DateTime(year, month, day);
           final isBirthday = key == AppKeys.birthday;
-          
+
           int? calculatedAge;
           if (year != 0) {
             calculatedAge = DateTime.now().year - year;
@@ -110,7 +125,11 @@ class _CalendarPageState extends State<CalendarPage> {
 
     // Parse Todos
     for (var todo in todos) {
-      final date = DateTime(todo.dueDate.year, todo.dueDate.month, todo.dueDate.day);
+      final date = DateTime(
+        todo.dueDate.year,
+        todo.dueDate.month,
+        todo.dueDate.day,
+      );
       debugPrint("Adding todo event for date: $date - ${todo.title}");
       newEvents.putIfAbsent(date, () => []).add(todo);
     }
@@ -122,7 +141,7 @@ class _CalendarPageState extends State<CalendarPage> {
     if (event is Todo) {
       return Colors.blue;
     }
-    
+
     final calendarEvent = event as CalendarEvent;
     if (calendarEvent.isBirthday) {
       return Colors.pink;
@@ -156,7 +175,10 @@ class _CalendarPageState extends State<CalendarPage> {
                         ),
                         Text(
                           "$selectedYear",
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         IconButton(
                           icon: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -168,39 +190,50 @@ class _CalendarPageState extends State<CalendarPage> {
                     Expanded(
                       child: GridView.builder(
                         itemCount: 12,
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          childAspectRatio: 1.5,
-                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              childAspectRatio: 1.5,
+                            ),
                         itemBuilder: (context, index) {
                           final month = index + 1;
                           final isSelected = month == selectedMonth;
-                          final monthName = DateFormat.MMM(Localizations.localeOf(context).toString())
-                              .format(DateTime(2024, month));
+                          final monthName = DateFormat.MMM(
+                            Localizations.localeOf(context).toString(),
+                          ).format(DateTime(2024, month));
 
                           return InkWell(
-                            onTap: () => setDialogState(() => selectedMonth = month),
+                            onTap: () =>
+                                setDialogState(() => selectedMonth = month),
                             child: Container(
                               margin: const EdgeInsets.all(4),
                               decoration: BoxDecoration(
-                                color: isSelected 
-                                    ? Theme.of(context).colorScheme.primary 
+                                color: isSelected
+                                    ? Theme.of(context).colorScheme.primary
                                     : Colors.transparent,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: isSelected 
-                                      ? Theme.of(context).colorScheme.primary 
-                                      : Theme.of(context).colorScheme.outlineVariant,
+                                  color: isSelected
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(
+                                          context,
+                                        ).colorScheme.outlineVariant,
                                 ),
                               ),
                               child: Center(
                                 child: Text(
                                   monthName,
                                   style: TextStyle(
-                                    color: isSelected 
-                                        ? Theme.of(context).colorScheme.onPrimary 
-                                        : Theme.of(context).colorScheme.onSurface,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: isSelected
+                                        ? Theme.of(
+                                            context,
+                                          ).colorScheme.onPrimary
+                                        : Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
                                   ),
                                 ),
                               ),
@@ -218,7 +251,10 @@ class _CalendarPageState extends State<CalendarPage> {
                   child: Text(l10n.cancel),
                 ),
                 ElevatedButton(
-                  onPressed: () => Navigator.pop(context, DateTime(selectedYear, selectedMonth)),
+                  onPressed: () => Navigator.pop(
+                    context,
+                    DateTime(selectedYear, selectedMonth),
+                  ),
                   child: Text(l10n.save),
                 ),
               ],
@@ -264,7 +300,8 @@ class _CalendarPageState extends State<CalendarPage> {
                   SwitchListTile(
                     title: Text(l10n.remindEveryYear),
                     value: remindYearly,
-                    onChanged: (val) => setDialogState(() => remindYearly = val),
+                    onChanged: (val) =>
+                        setDialogState(() => remindYearly = val),
                   ),
                   const Divider(),
                   const SizedBox(height: 8),
@@ -318,27 +355,29 @@ class _CalendarPageState extends State<CalendarPage> {
       try {
         final contact = await _dbService.getContact(event.contactId);
         if (contact == null) return;
-        
-        final dateStr = DateFormat('dd.MM.yyyy').format(event.date);
-        
+
+        final dateStr = event.date.year == 0
+            ? "${event.date.day.toString().padLeft(2, '0')}.${event.date.month.toString().padLeft(2, '0')}.0000"
+            : DateFormat('dd.MM.yyyy').format(event.date);
+
         contact.fields[event.fieldName] = {
           'date': dateStr,
           'remindYearly': result['remindYearly'],
           'remindBefore': result['remindBefore'],
         };
-        
+
         await _dbService.updateContact(contact);
-        
+
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.save)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.save)));
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${l10n.error}: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('${l10n.error}: $e')));
         }
       }
     }
@@ -357,9 +396,13 @@ class _CalendarPageState extends State<CalendarPage> {
             if (todosSnapshot.hasError) {
               debugPrint("Todos stream error: ${todosSnapshot.error}");
             }
-            if ((contactsSnapshot.connectionState == ConnectionState.waiting && !contactsSnapshot.hasData) ||
-                (todosSnapshot.connectionState == ConnectionState.waiting && !todosSnapshot.hasData)) {
-              return const Scaffold(body: Center(child: CircularProgressIndicator()));
+            if ((contactsSnapshot.connectionState == ConnectionState.waiting &&
+                    !contactsSnapshot.hasData) ||
+                (todosSnapshot.connectionState == ConnectionState.waiting &&
+                    !todosSnapshot.hasData)) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
             }
 
             final contacts = contactsSnapshot.data ?? [];
@@ -393,7 +436,11 @@ class _CalendarPageState extends State<CalendarPage> {
                     onDaySelected: (selectedDay, focusedDay) {
                       if (!isSameDay(_selectedDay, selectedDay)) {
                         setState(() {
-                          _selectedDay = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+                          _selectedDay = DateTime(
+                            selectedDay.year,
+                            selectedDay.month,
+                            selectedDay.day,
+                          );
                           _focusedDay = focusedDay;
                         });
                       }
@@ -418,15 +465,20 @@ class _CalendarPageState extends State<CalendarPage> {
                             children: events.take(4).map((event) {
                               final bool isTodo = event is Todo;
                               return Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 0.5),
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 0.5,
+                                ),
                                 width: 8,
                                 height: 8,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: isTodo ? null : _getEventColor(event),
-                                  border: isTodo 
-                                    ? Border.all(color: _getEventColor(event), width: 1.5)
-                                    : null,
+                                  border: isTodo
+                                      ? Border.all(
+                                          color: _getEventColor(event),
+                                          width: 1.5,
+                                        )
+                                      : null,
                                 ),
                               );
                             }).toList(),
@@ -445,22 +497,35 @@ class _CalendarPageState extends State<CalendarPage> {
                     child: Container(
                       padding: const EdgeInsets.all(16.0),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest
+                            .withValues(alpha: 0.3),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(28),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _selectedDay != null 
-                              ? "${l10n.eventsOnThisDay}: ${DateFormat.yMMMMd(Localizations.localeOf(context).toString()).format(_selectedDay!)}"
-                              : l10n.eventsOnThisDay,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                            _selectedDay != null
+                                ? "${l10n.eventsOnThisDay}: ${DateFormat.yMMMMd(Localizations.localeOf(context).toString()).format(_selectedDay!)}"
+                                : l10n.eventsOnThisDay,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 12),
                           Expanded(
                             child: selectedEvents.isEmpty
-                                ? Center(child: Text(l10n.noEventsOnThisDay, style: const TextStyle(color: Colors.grey)))
+                                ? Center(
+                                    child: Text(
+                                      l10n.noEventsOnThisDay,
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  )
                                 : ListView.builder(
                                     itemCount: selectedEvents.length,
                                     itemBuilder: (context, index) {
@@ -468,7 +533,9 @@ class _CalendarPageState extends State<CalendarPage> {
                                       if (event is Todo) {
                                         return _buildTodoTile(event);
                                       }
-                                      return _buildContactEventTile(event as CalendarEvent);
+                                      return _buildContactEventTile(
+                                        event as CalendarEvent,
+                                      );
                                     },
                                   ),
                           ),
@@ -513,41 +580,52 @@ class _CalendarPageState extends State<CalendarPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (todo.description.isNotEmpty) Text(todo.description),
-            if (todo.contactName != null) 
+            if (todo.contactName != null)
               Padding(
                 padding: const EdgeInsets.only(top: 4.0),
                 child: InkWell(
-                  onTap: todo.contactId != null ? () async {
-                    final contact = await _dbService.getContact(todo.contactId!);
-                    if (contact != null && mounted) {
-                      final allContacts = await _dbService.getAllContacts();
-                      final Set<String> allFields = {};
-                      final Set<String> allNames = {};
-                      final Set<String> allGroups = {};
-                      for (var c in allContacts) {
-                        allFields.addAll(c.fields.keys);
-                        allNames.add(c.name);
-                        final gStr = c.fields[AppKeys.groups]?.toString();
-                        if (gStr != null) allGroups.addAll(Contact.parseGroups(gStr));
-                      }
-                      if (!mounted) return;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ContactPage(
-                            contact: contact,
-                            existingFields: allFields,
-                            existingNames: allNames,
-                            existingGroups: allGroups,
-                          ),
-                        ),
-                      );
-                    }
-                  } : null,
+                  onTap: todo.contactId != null
+                      ? () async {
+                          final contact = await _dbService.getContact(
+                            todo.contactId!,
+                          );
+                          if (contact != null && mounted) {
+                            final allContacts = await _dbService
+                                .getAllContacts();
+                            final Set<String> allFields = {};
+                            final Set<String> allNames = {};
+                            final Set<String> allGroups = {};
+                            for (var c in allContacts) {
+                              allFields.addAll(c.fields.keys);
+                              allNames.add(c.name);
+                              final gStr = c.fields[AppKeys.groups]?.toString();
+                              if (gStr != null) {
+                                allGroups.addAll(Contact.parseGroups(gStr));
+                              }
+                            }
+                            if (!mounted) return;
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ContactPage(
+                                  contact: contact,
+                                  existingFields: allFields,
+                                  existingNames: allNames,
+                                  existingGroups: allGroups,
+                                ),
+                              ),
+                            );
+                          }
+                        }
+                      : null,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.person_outline, size: 14, color: Theme.of(context).colorScheme.primary),
+                      Icon(
+                        Icons.person_outline,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         todo.contactName!,
@@ -586,22 +664,28 @@ class _CalendarPageState extends State<CalendarPage> {
         onTap: () => _showReminderSettings(event),
         leading: Icon(
           event.isBirthday ? Icons.cake : Icons.event,
-          color: event.isBirthday ? Colors.pink : Theme.of(context).colorScheme.primary,
+          color: event.isBirthday
+              ? Colors.pink
+              : Theme.of(context).colorScheme.primary,
         ),
         title: Text(
-          event.age != null 
-            ? "${event.contactName} (${event.age})"
-            : event.contactName
+          event.age != null
+              ? "${event.contactName} (${event.age})"
+              : event.contactName,
         ),
         subtitle: Text(
-          event.isBirthday 
-            ? l10n.birthdayEvent
-            : AppKeys.getLocalizedLabel(event.fieldName, l10n),
+          event.isBirthday
+              ? l10n.birthdayEvent
+              : AppKeys.getLocalizedLabel(event.fieldName, l10n),
         ),
         trailing: Text(
           event.date.year == 0
-            ? DateFormat.MMMMd(Localizations.localeOf(context).toString()).format(event.date)
-            : DateFormat.yMMMMd(Localizations.localeOf(context).toString()).format(event.date),
+              ? DateFormat.MMMMd(
+                  Localizations.localeOf(context).toString(),
+                ).format(event.date)
+              : DateFormat.yMMMMd(
+                  Localizations.localeOf(context).toString(),
+                ).format(event.date),
           style: const TextStyle(fontSize: 12, color: Colors.grey),
         ),
       ),
@@ -646,9 +730,9 @@ class _CalendarPageState extends State<CalendarPage> {
             onPressed: () {
               _dbService.deleteTodo(todo.id!);
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(l10n.todoDeleted)),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(l10n.todoDeleted)));
             },
             child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
           ),

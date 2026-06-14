@@ -14,7 +14,6 @@ import '../providers/theme_provider.dart';
 import '../providers/notification_provider.dart';
 import '../services/firestore_service.dart';
 import '../services/auth_service.dart';
-import '../services/notification_service.dart';
 import '../utils/constants.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -53,30 +52,15 @@ class SettingsPage extends StatelessWidget {
                 }
               },
               items: const [
-                DropdownMenuItem<String>(
-                  value: 'en',
-                  child: Text('English'),
-                ),
+                DropdownMenuItem<String>(value: 'en', child: Text('English')),
                 DropdownMenuItem<String>(
                   value: 'uk',
                   child: Text('Українська'),
                 ),
-                DropdownMenuItem<String>(
-                  value: 'de',
-                  child: Text('Deutsch'),
-                ),
-                DropdownMenuItem<String>(
-                  value: 'fr',
-                  child: Text('Français'),
-                ),
-                DropdownMenuItem<String>(
-                  value: 'es',
-                  child: Text('Español'),
-                ),
-                DropdownMenuItem<String>(
-                  value: 'pl',
-                  child: Text('Polski'),
-                ),
+                DropdownMenuItem<String>(value: 'de', child: Text('Deutsch')),
+                DropdownMenuItem<String>(value: 'fr', child: Text('Français')),
+                DropdownMenuItem<String>(value: 'es', child: Text('Español')),
+                DropdownMenuItem<String>(value: 'pl', child: Text('Polski')),
               ],
             ),
           ),
@@ -95,10 +79,7 @@ class SettingsPage extends StatelessWidget {
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     const SizedBox(width: 12),
-                    Text(
-                      l10n.themeColor,
-                      style: const TextStyle(fontSize: 16),
-                    ),
+                    Text(l10n.themeColor, style: const TextStyle(fontSize: 16)),
                     const Spacer(),
                     IconButton(
                       icon: Icon(
@@ -107,7 +88,8 @@ class SettingsPage extends StatelessWidget {
                                     platformBrightness == Brightness.light)
                             ? Icons.light_mode
                             : Icons.light_mode_outlined,
-                        color: themeProvider.themeMode == ThemeMode.light ||
+                        color:
+                            themeProvider.themeMode == ThemeMode.light ||
                                 (themeProvider.themeMode == ThemeMode.system &&
                                     platformBrightness == Brightness.light)
                             ? themeProvider.seedColor
@@ -123,7 +105,8 @@ class SettingsPage extends StatelessWidget {
                                     platformBrightness == Brightness.dark)
                             ? Icons.dark_mode
                             : Icons.dark_mode_outlined,
-                        color: themeProvider.themeMode == ThemeMode.dark ||
+                        color:
+                            themeProvider.themeMode == ThemeMode.dark ||
                                 (themeProvider.themeMode == ThemeMode.system &&
                                     platformBrightness == Brightness.dark)
                             ? themeProvider.seedColor
@@ -142,8 +125,12 @@ class SettingsPage extends StatelessWidget {
                   divisions: 359,
                   activeColor: themeProvider.seedColor,
                   onChanged: (double value) {
-                    final newColor =
-                        HSVColor.fromAHSV(1.0, value, 0.7, 0.9).toColor();
+                    final newColor = HSVColor.fromAHSV(
+                      1.0,
+                      value,
+                      0.7,
+                      0.9,
+                    ).toColor();
                     themeProvider.setSeedColor(newColor);
                   },
                 ),
@@ -171,14 +158,6 @@ class SettingsPage extends StatelessWidget {
             },
           ),
 
-          ListTile(
-            leading: const Icon(Icons.notifications_active),
-            title: Text(l10n.testNotification),
-            onTap: () {
-              NotificationService().showTestNotification();
-            },
-          ),
-
           const Divider(),
 
           ListTile(
@@ -201,10 +180,7 @@ class SettingsPage extends StatelessWidget {
 
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
-            title: Text(
-              l10n.logout,
-              style: const TextStyle(color: Colors.red),
-            ),
+            title: Text(l10n.logout, style: const TextStyle(color: Colors.red)),
             onTap: () async {
               final authService = AuthService();
               await authService.signOut();
@@ -220,19 +196,13 @@ class SettingsPage extends StatelessWidget {
                 Text(
                   l10n.onboardingContactMeDesc,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(color: Colors.grey, fontSize: 14),
                 ),
                 const SizedBox(height: 4),
                 const Text(
                   "Ладіков Максим, 45 група",
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.grey, fontSize: 14),
                 ),
               ],
             ),
@@ -248,9 +218,9 @@ class SettingsPage extends StatelessWidget {
       final contacts = await dbService.getAllContacts();
       if (contacts.isEmpty) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.noDataToExport)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.noDataToExport)));
         }
         return;
       }
@@ -275,20 +245,22 @@ class SettingsPage extends StatelessWidget {
           text: 'Personal PIM Contacts Export',
           subject: 'Contacts Export',
           files: [XFile(file.path)],
-          sharePositionOrigin: box != null ? box.localToGlobal(Offset.zero) & box.size : null,
+          sharePositionOrigin: box != null
+              ? box.localToGlobal(Offset.zero) & box.size
+              : null,
         ),
       );
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.exportSuccessful)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.exportSuccessful)));
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${l10n.exportFailed}: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${l10n.exportFailed}: $e')));
       }
     }
   }
@@ -316,42 +288,51 @@ class SettingsPage extends StatelessWidget {
       await dbService.importContacts(contacts);
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.importSuccessful)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.importSuccessful)));
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${l10n.importFailed}: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${l10n.importFailed}: $e')));
       }
     }
   }
 
-  Future<void> _importFromPhone(BuildContext context, AppLocalizations l10n) async {
+  Future<void> _importFromPhone(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) async {
     try {
       if (kIsWeb) return;
 
-      final status = await fc.FlutterContacts.permissions.request(fc.PermissionType.read);
+      final status = await fc.FlutterContacts.permissions.request(
+        fc.PermissionType.read,
+      );
       if (status != fc.PermissionStatus.granted) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.permissionDenied)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.permissionDenied)));
         }
         return;
       }
 
       final nativeContacts = await fc.FlutterContacts.getAll(
-        properties: {fc.ContactProperty.phone, fc.ContactProperty.email, fc.ContactProperty.event},
+        properties: {
+          fc.ContactProperty.phone,
+          fc.ContactProperty.email,
+          fc.ContactProperty.event,
+        },
       );
 
       if (nativeContacts.isEmpty) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.noResultsFound)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.noResultsFound)));
         }
         return;
       }
@@ -362,10 +343,8 @@ class SettingsPage extends StatelessWidget {
         context: context,
         isScrollControlled: true,
         useSafeArea: true,
-        builder: (context) => _ContactPickerSheet(
-          nativeContacts: nativeContacts,
-          l10n: l10n,
-        ),
+        builder: (context) =>
+            _ContactPickerSheet(nativeContacts: nativeContacts, l10n: l10n),
       );
 
       if (selectedContacts != null && selectedContacts.isNotEmpty) {
@@ -373,16 +352,16 @@ class SettingsPage extends StatelessWidget {
         final dbService = Provider.of<FirestoreService>(context, listen: false);
         await dbService.importContacts(selectedContacts);
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.importSuccessful)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.importSuccessful)));
         }
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${l10n.error}: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${l10n.error}: $e')));
       }
     }
   }
@@ -392,10 +371,7 @@ class _ContactPickerSheet extends StatefulWidget {
   final List<fc.Contact> nativeContacts;
   final AppLocalizations l10n;
 
-  const _ContactPickerSheet({
-    required this.nativeContacts,
-    required this.l10n,
-  });
+  const _ContactPickerSheet({required this.nativeContacts, required this.l10n});
 
   @override
   State<_ContactPickerSheet> createState() => _ContactPickerSheetState();
@@ -447,7 +423,11 @@ class _ContactPickerSheetState extends State<_ContactPickerSheet> {
 
               return CheckboxListTile(
                 title: Text(contact.displayName ?? ""),
-                subtitle: Text(contact.phones.isNotEmpty ? (contact.phones.first.number) : ""),
+                subtitle: Text(
+                  contact.phones.isNotEmpty
+                      ? (contact.phones.first.number)
+                      : "",
+                ),
                 value: isSelected,
                 onChanged: (val) {
                   setState(() {
@@ -498,7 +478,9 @@ class _ContactPickerSheetState extends State<_ContactPickerSheet> {
     }
 
     if (native.events.isNotEmpty) {
-      final bday = native.events.where((e) => e.label.label == fc.EventLabel.birthday).toList();
+      final bday = native.events
+          .where((e) => e.label.label == fc.EventLabel.birthday)
+          .toList();
       if (bday.isNotEmpty) {
         final date = bday.first;
         final monthStr = date.month.toString().padLeft(2, '0');

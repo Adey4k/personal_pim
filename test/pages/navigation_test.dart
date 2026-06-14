@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:personal_pim/pages/home_page.dart';
-import 'package:personal_pim/pages/calendar_page.dart';
-import 'package:personal_pim/pages/settings_page.dart';
 import 'package:personal_pim/services/firestore_service.dart';
 import 'package:personal_pim/providers/locale_provider.dart';
 import 'package:personal_pim/providers/theme_provider.dart';
