@@ -2,7 +2,7 @@
   <h1>Розумна телефонна книга (Personal PIM)</h1>
   <p><i>Кваліфікаційна робота на підтвердження ступеня фахового молодшого бакалавра</i></p>
   
-  [![Завантажити APK](https://img.shields.io/badge/Download-APK-green?style=for-the-badge&logo=android)](https://github.com/ВАШ_ЛОГІН/personal_pim/releases/latest)
+  [![Завантажити APK](https://img.shields.io/badge/Download-APK-green?style=for-the-badge&logo=android)](https://github.com/Adey4k/personal_pim/releases/latest)
   [![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
   [![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=white)](https://firebase.google.com)
   [![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
@@ -58,8 +58,6 @@
 
 Готовий до встановлення `.apk` файл завжди доступний для завантаження в розділі релізів:
 
-<a href="https://github.com/ВАШ_ЛОГІН/personal_pim/releases/latest">
+<a href="https://github.com/Adey4k/personal_pim/releases/latest">
   <img src="https://img.shields.io/badge/Завантажити_з-GitHub_Releases-181717?style=for-the-badge&logo=github&logoColor=white" alt="Завантажити з GitHub" height="40" />
 </a>
-
-*(Примітка: Переконайтеся, що ви замінили `ВАШ_ЛОГІН` у посиланнях вище на свій реальний логін GitHub)*
