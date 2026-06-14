@@ -10,11 +10,11 @@ class HomeWidgetService {
     final upcomingBirthdays = _getUpcomingBirthdays(contacts);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    
+
     final List<Map<String, String>> data = upcomingBirthdays.map((c) {
       final dateStr = _extractBirthdayDate(c.fields[AppKeys.birthday]);
       final age = _calculateUpcomingAge(dateStr, today);
-      
+
       return {
         'id': c.id ?? '',
         'name': c.name,
@@ -33,8 +33,6 @@ class HomeWidgetService {
   static Future<void> updateCustomEvents(List<Contact> contacts) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final RegExp dateRegex = RegExp(r'^(\d{2})[\.\-](\d{2})[\.\-](\d{4})$');
-
     // Group upcoming events by field name
     // Event format: { eventType: [ { id, name, date, age }, ... ] }
     Map<String, List<Map<String, String>>> groupedEvents = {};
@@ -46,10 +44,9 @@ class HomeWidgetService {
         String? dateStr = _extractBirthdayDate(value);
         if (dateStr.isEmpty) return;
 
-        final match = dateRegex.firstMatch(dateStr);
-        if (match != null) {
+        if (_parseStoredDate(dateStr) != null) {
           final age = _calculateUpcomingAge(dateStr, today);
-          
+
           if (!groupedEvents.containsKey(key)) {
             groupedEvents[key] = [];
           }
@@ -57,7 +54,9 @@ class HomeWidgetService {
           groupedEvents[key]!.add({
             'id': c.id ?? '',
             'name': c.name,
-            'date': dateStr.endsWith('.0000') ? dateStr.substring(0, 5) : dateStr,
+            'date': dateStr.endsWith('.0000')
+                ? dateStr.substring(0, 5)
+                : dateStr,
             'age': age > 0 ? '$age' : '',
           });
         }
@@ -79,12 +78,12 @@ class HomeWidgetService {
     final eventTypes = groupedEvents.keys.toList();
     eventTypes.sort();
 
-    final payload = {
-      'eventTypes': eventTypes,
-      'events': groupedEvents,
-    };
+    final payload = {'eventTypes': eventTypes, 'events': groupedEvents};
 
-    await HomeWidget.saveWidgetData<String>('custom_events_data', jsonEncode(payload));
+    await HomeWidget.saveWidgetData<String>(
+      'custom_events_data',
+      jsonEncode(payload),
+    );
     await HomeWidget.updateWidget(
       name: 'CustomEventWidgetProvider',
       androidName: 'CustomEventWidgetProvider',
@@ -100,52 +99,42 @@ class HomeWidgetService {
   }
 
   static int _calculateUpcomingAge(String bdayStr, DateTime today) {
-    try {
-      final separator = bdayStr.contains('.') ? '.' : '-';
-      final parts = bdayStr.split(separator);
-      
-      if (parts.length != 3) return 0;
+    final parsedDate = _parseStoredDate(bdayStr);
+    if (parsedDate == null) return 0;
+    var year = parsedDate.year;
 
-      int day, month, year;
-      if (separator == '.') {
-        day = int.parse(parts[0]);
-        month = int.parse(parts[1]);
-        year = int.parse(parts[2]);
-      } else {
-        year = int.parse(parts[0]);
-        month = int.parse(parts[1]);
-        day = int.parse(parts[2]);
-      }
-
-      if (year < 100) {
-        year += (year > DateTime.now().year % 100) ? 1900 : 2000;
-      }
-
-      if (year < 1850 || year > 2100) return 0;
-
-      var nextBday = DateTime(today.year, month, day);
-      if (nextBday.isBefore(today)) {
-        nextBday = DateTime(today.year + 1, month, day);
-      }
-
-      return nextBday.year - year;
-    } catch (_) {
-      return 0;
+    if (year < 100) {
+      year += (year > DateTime.now().year % 100) ? 1900 : 2000;
     }
+
+    if (year < 1850 || year > 2100) return 0;
+
+    var nextBday = DateTime(today.year, parsedDate.month, parsedDate.day);
+    if (nextBday.isBefore(today)) {
+      nextBday = DateTime(today.year + 1, parsedDate.month, parsedDate.day);
+    }
+
+    return nextBday.year - year;
   }
 
   static List<Contact> _getUpcomingBirthdays(List<Contact> contacts) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    
+
     final birthdayContacts = contacts.where((c) {
       final bdayDate = _extractBirthdayDate(c.fields[AppKeys.birthday]);
       return bdayDate.isNotEmpty;
     }).toList();
 
     birthdayContacts.sort((a, b) {
-      final dateA = _getNextBirthday(_extractBirthdayDate(a.fields[AppKeys.birthday]), today);
-      final dateB = _getNextBirthday(_extractBirthdayDate(b.fields[AppKeys.birthday]), today);
+      final dateA = _getNextBirthday(
+        _extractBirthdayDate(a.fields[AppKeys.birthday]),
+        today,
+      );
+      final dateB = _getNextBirthday(
+        _extractBirthdayDate(b.fields[AppKeys.birthday]),
+        today,
+      );
       return dateA.compareTo(dateB);
     });
 
@@ -153,27 +142,67 @@ class HomeWidgetService {
   }
 
   static DateTime _getNextBirthday(String bdayStr, DateTime today) {
-    try {
-      final separator = bdayStr.contains('.') ? '.' : '-';
-      final parts = bdayStr.split(separator);
-      if (parts.length < 2) return DateTime(2100);
-      
-      int day, month;
-      if (separator == '.') {
-        day = int.parse(parts[0]);
-        month = int.parse(parts[1]);
-      } else {
-        month = int.parse(parts[1]);
-        day = int.parse(parts[2]);
-      }
-      
-      var nextBday = DateTime(today.year, month, day);
-      if (nextBday.isBefore(today)) {
-        nextBday = DateTime(today.year + 1, month, day);
-      }
-      return nextBday;
-    } catch (_) {
-      return DateTime(2100);
+    final parsedDate = _parseStoredDate(bdayStr);
+    if (parsedDate == null) return DateTime(2100);
+
+    var nextBday = DateTime(today.year, parsedDate.month, parsedDate.day);
+    if (nextBday.isBefore(today)) {
+      nextBday = DateTime(today.year + 1, parsedDate.month, parsedDate.day);
     }
+    return nextBday;
   }
+
+  static _ParsedWidgetDate? _parseStoredDate(String value) {
+    final text = value.trim();
+    final dayMonthYear = RegExp(
+      r'^(\d{1,2})[\.\-\/](\d{1,2})[\.\-\/](\d{4})$',
+    ).firstMatch(text);
+    if (dayMonthYear != null) {
+      return _validDate(
+        year: int.parse(dayMonthYear.group(3)!),
+        month: int.parse(dayMonthYear.group(2)!),
+        day: int.parse(dayMonthYear.group(1)!),
+      );
+    }
+
+    final yearMonthDay = RegExp(
+      r'^(\d{4})[\.\-\/](\d{1,2})[\.\-\/](\d{1,2})$',
+    ).firstMatch(text);
+    if (yearMonthDay != null) {
+      return _validDate(
+        year: int.parse(yearMonthDay.group(1)!),
+        month: int.parse(yearMonthDay.group(2)!),
+        day: int.parse(yearMonthDay.group(3)!),
+      );
+    }
+
+    return null;
+  }
+
+  static _ParsedWidgetDate? _validDate({
+    required int year,
+    required int month,
+    required int day,
+  }) {
+    if (month < 1 || month > 12 || day < 1) return null;
+    final validationYear = year == 0 ? 2000 : year;
+    final date = DateTime(validationYear, month, day);
+    if (date.year != validationYear || date.month != month || date.day != day) {
+      return null;
+    }
+
+    return _ParsedWidgetDate(year: year, month: month, day: day);
+  }
+}
+
+class _ParsedWidgetDate {
+  final int year;
+  final int month;
+  final int day;
+
+  const _ParsedWidgetDate({
+    required this.year,
+    required this.month,
+    required this.day,
+  });
 }

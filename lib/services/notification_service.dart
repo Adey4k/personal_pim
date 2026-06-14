@@ -55,7 +55,6 @@ class NotificationService {
               >();
 
       await androidImplementation?.requestNotificationsPermission();
-      await androidImplementation?.requestExactAlarmsPermission();
     }
   }
 

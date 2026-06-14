@@ -230,14 +230,23 @@ class FirestoreService {
 
   Future<void> importContacts(List<Contact> contacts) async {
     final collection = _getUserCollection();
-    if (collection == null) return;
+    if (collection == null || contacts.isEmpty) return;
 
-    final batch = _db.batch();
-    for (var contact in contacts) {
-      final docRef = collection.doc(); // Generate new ID
-      batch.set(docRef, contact.toMap());
+    const int batchSize = 500;
+    for (int i = 0; i < contacts.length; i += batchSize) {
+      final batch = _db.batch();
+      final chunk = contacts.sublist(
+        i,
+        i + batchSize > contacts.length ? contacts.length : i + batchSize,
+      );
+
+      for (var contact in chunk) {
+        final docRef = collection.doc();
+        batch.set(docRef, contact.toMap());
+      }
+
+      await batch.commit();
     }
-    await batch.commit();
   }
 
   Stream<List<Contact>> getContactsStream() {

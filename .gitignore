@@ -31,7 +31,10 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+/android/build/
 /coverage/
+devtools_options.yaml
+.artifacts/
 
 # Symbolication related
 app.*.symbols
@@ -44,11 +47,10 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Sectets configuration
+# Secrets configuration
 secrets.env
 key.properties
 env.g.dart
 .firebaserc
 firebase.json
-functions/package-lock.json
 android/app/google-services.json

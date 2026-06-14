@@ -60,9 +60,6 @@ class _CalendarPageState extends State<CalendarPage> {
     List<Contact> contacts,
     List<Todo> todos,
   ) {
-    debugPrint(
-      "Parsing events: ${contacts.length} contacts, ${todos.length} todos",
-    );
     final Map<DateTime, List<dynamic>> newEvents = {};
 
     // Parse Contacts
@@ -130,7 +127,6 @@ class _CalendarPageState extends State<CalendarPage> {
         todo.dueDate.month,
         todo.dueDate.day,
       );
-      debugPrint("Adding todo event for date: $date - ${todo.title}");
       newEvents.putIfAbsent(date, () => []).add(todo);
     }
 
@@ -393,9 +389,6 @@ class _CalendarPageState extends State<CalendarPage> {
         return StreamBuilder<List<Todo>>(
           stream: _todosStream,
           builder: (context, todosSnapshot) {
-            if (todosSnapshot.hasError) {
-              debugPrint("Todos stream error: ${todosSnapshot.error}");
-            }
             if ((contactsSnapshot.connectionState == ConnectionState.waiting &&
                     !contactsSnapshot.hasData) ||
                 (todosSnapshot.connectionState == ConnectionState.waiting &&

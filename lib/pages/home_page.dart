@@ -11,6 +11,7 @@ import '../services/home_widget_service.dart';
 import '../services/firestore_service.dart';
 import '../models/contact.dart';
 import '../utils/constants.dart';
+import '../utils/showcase_utils.dart';
 import '../utils/validators.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/tutorial_provider.dart';
@@ -43,27 +44,32 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    ShowcaseView.register();
+    ensureShowcaseViewRegistered();
     // Getting firestore service from provider safely in initState
-    _contactsStream = Provider.of<FirestoreService>(context, listen: false).getContactsStream();
+    _contactsStream = Provider.of<FirestoreService>(
+      context,
+      listen: false,
+    ).getContactsStream();
     NotificationService().requestPermissions();
   }
 
-  void _startTutorialIfNeeded() async {
-    final tutorialProvider = Provider.of<TutorialProvider>(context, listen: false);
-    if (!tutorialProvider.isHomeTutorialShown) {
-      try {
-        ShowcaseView.get().startShowCase([
-          _tableKey,
-          _addKey,
-          _calendarKey,
-          _settingsKey,
-        ]);
-      } catch (e) {
-        // Skip if keys aren't mounted
-      }
-      tutorialProvider.markHomeTutorialAsShown();
+  Future<void> _startTutorialIfNeeded() async {
+    final tutorialProvider = context.read<TutorialProvider?>();
+    if (tutorialProvider == null || tutorialProvider.isHomeTutorialShown) {
+      return;
     }
+
+    try {
+      ShowcaseView.get().startShowCase([
+        _tableKey,
+        _addKey,
+        _calendarKey,
+        _settingsKey,
+      ]);
+    } catch (_) {
+      // Skip if keys aren't mounted yet.
+    }
+    await tutorialProvider.markHomeTutorialAsShown();
   }
 
   @override
@@ -85,7 +91,7 @@ class _HomePageState extends State<HomePage> {
       Colors.indigo,
       Colors.brown,
       Colors.cyan,
-      Colors.deepOrange
+      Colors.deepOrange,
     ];
     return colors[groupName.hashCode.abs() % colors.length];
   }
@@ -130,7 +136,7 @@ class _HomePageState extends State<HomePage> {
       for (var entry in contact.fields.entries) {
         String key = entry.key;
         String valueStr = "";
-        
+
         if (entry.value is Map) {
           valueStr = entry.value['date']?.toString() ?? "";
         } else {
@@ -210,7 +216,7 @@ class _HomePageState extends State<HomePage> {
       builder: (context, snapshot) {
         final contacts = snapshot.data ?? [];
         final provider = Provider.of<ContactsProvider>(context, listen: false);
-        
+
         // Use post-frame callback to avoid updating state during build
         if (snapshot.connectionState != ConnectionState.waiting) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -274,8 +280,12 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildBody(AsyncSnapshot<List<Contact>> snapshot, List<Contact> contacts,
-      Set<String> existingNames, Set<String> existingGroups) {
+  Widget _buildBody(
+    AsyncSnapshot<List<Contact>> snapshot,
+    List<Contact> contacts,
+    Set<String> existingNames,
+    Set<String> existingGroups,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     if (snapshot.connectionState == ConnectionState.waiting) {
       return const Center(child: CircularProgressIndicator());
@@ -283,18 +293,30 @@ class _HomePageState extends State<HomePage> {
 
     if (snapshot.hasError) {
       return Center(
-          child: Text('Помилка: ${snapshot.error}',
-              style: const TextStyle(color: Colors.red)));
+        child: Text(
+          'Помилка: ${snapshot.error}',
+          style: const TextStyle(color: Colors.red),
+        ),
+      );
     }
 
     return Consumer<ContactsProvider>(
       builder: (context, provider, child) {
-        bool isSearchActive = provider.searchQuery.isNotEmpty || provider.selectedGroupFilter != null;
-        List<Contact> filteredContacts = provider.getFilteredAndSortedContacts(contacts);
+        bool isSearchActive =
+            provider.searchQuery.isNotEmpty ||
+            provider.selectedGroupFilter != null;
+        List<Contact> filteredContacts = provider.getFilteredAndSortedContacts(
+          contacts,
+        );
 
         Map<String, double> columnWidths = {};
         for (String colName in provider.columns) {
-          columnWidths[colName] = provider.calculateColumnWidth(colName, contacts, context, _textPainter);
+          columnWidths[colName] = provider.calculateColumnWidth(
+            colName,
+            contacts,
+            context,
+            _textPainter,
+          );
         }
 
         return Column(
@@ -331,12 +353,16 @@ class _HomePageState extends State<HomePage> {
                   onReorder: (oldIndex, newIndex) {
                     final contact = filteredContacts.removeAt(oldIndex);
                     filteredContacts.insert(newIndex, contact);
-                    
+
                     if (provider.sortColumn != null) {
-                      provider.toggleSort(provider.sortColumn!); // This might just clear sort
+                      provider.toggleSort(
+                        provider.sortColumn!,
+                      ); // This might just clear sort
                     }
-                    
-                    context.read<FirestoreService>().updateAllContactsOrder(filteredContacts);
+
+                    context.read<FirestoreService>().updateAllContactsOrder(
+                      filteredContacts,
+                    );
                   },
                   onTap: (contact) async {
                     final allFieldTypes = _inferFieldTypes(contacts);
