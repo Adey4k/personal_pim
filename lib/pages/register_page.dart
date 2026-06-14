@@ -16,7 +16,8 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final AuthService _authService = AuthService();
 
   bool _isPasswordVisible = false;
@@ -50,14 +51,22 @@ class _RegisterPageState extends State<RegisterPage> {
     }
     final message = e.toString().replaceAll('Exception: ', '');
     switch (message) {
-      case 'invalidEmail': return l10n.invalidEmail;
-      case 'emailAlreadyInUse': return l10n.emailAlreadyInUse;
-      case 'weakPassword': return l10n.weakPassword;
-      case 'tooManyRequests': return l10n.tooManyRequests;
-      case 'authError': return l10n.authError;
-      case 'unknownRegistrationError': return l10n.unknownRegistrationError;
-      case 'unknownError': return l10n.unknownError;
-      default: return message;
+      case 'invalidEmail':
+        return l10n.invalidEmail;
+      case 'emailAlreadyInUse':
+        return l10n.emailAlreadyInUse;
+      case 'weakPassword':
+        return l10n.weakPassword;
+      case 'tooManyRequests':
+        return l10n.tooManyRequests;
+      case 'authError':
+        return l10n.authError;
+      case 'unknownRegistrationError':
+        return l10n.unknownRegistrationError;
+      case 'unknownError':
+        return l10n.unknownError;
+      default:
+        return message;
     }
   }
 
@@ -65,7 +74,9 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final localeProvider = Provider.of<LocaleProvider>(context);
-    final currentLocaleCode = localeProvider.locale?.languageCode ?? Localizations.localeOf(context).languageCode;
+    final currentLocaleCode =
+        localeProvider.locale?.languageCode ??
+        Localizations.localeOf(context).languageCode;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -86,7 +97,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              
+
               // Welcome Text Section
               Text(
                 l10n.createAccount,
@@ -142,7 +153,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ],
               ),
               const SizedBox(height: 16),
-              
+
               // Email Field
               TextField(
                 controller: _emailController,
@@ -158,7 +169,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
-              
+
               // Password Field
               TextField(
                 controller: _passwordController,
@@ -168,7 +179,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                      _isPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
                     ),
                     onPressed: () {
                       setState(() {
@@ -184,7 +197,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 obscureText: !_isPasswordVisible,
               ),
               const SizedBox(height: 16),
-              
+
               // Confirm Password Field
               TextField(
                 controller: _confirmPasswordController,
@@ -194,7 +207,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   prefixIcon: const Icon(Icons.lock_clock_outlined),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                      _isConfirmPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
                     ),
                     onPressed: () {
                       setState(() {
@@ -216,7 +231,8 @@ class _RegisterPageState extends State<RegisterPage> {
                 onPressed: () async {
                   final email = _emailController.text.trim();
                   final password = _passwordController.text.trim();
-                  final confirmPassword = _confirmPasswordController.text.trim();
+                  final confirmPassword = _confirmPasswordController.text
+                      .trim();
                   final firstName = _firstNameController.text.trim();
                   final lastName = _lastNameController.text.trim();
 
@@ -238,14 +254,11 @@ class _RegisterPageState extends State<RegisterPage> {
                       firstName: firstName,
                       lastName: lastName,
                     );
-                    _showSnackBar(
-                      l10n.verificationEmailSent,
-                      isError: false,
-                    );
-                    if (mounted) {
-                      Navigator.of(context).pop();
-                    }
+                    if (!context.mounted) return;
+                    _showSnackBar(l10n.verificationEmailSent, isError: false);
+                    Navigator.of(context).pop();
                   } catch (e) {
+                    if (!context.mounted) return;
                     _showSnackBar(_translateError(e, l10n));
                   }
                 },
@@ -260,11 +273,14 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 child: Text(
                   l10n.register,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Login Link
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,

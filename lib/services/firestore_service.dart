@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/contact.dart';
@@ -9,8 +11,8 @@ class FirestoreService {
   final FirebaseFirestore _firestoreInstance;
 
   FirestoreService({FirebaseAuth? auth, FirebaseFirestore? firestore})
-      : _authInstance = auth ?? FirebaseAuth.instance,
-        _firestoreInstance = firestore ?? FirebaseFirestore.instance;
+    : _authInstance = auth ?? FirebaseAuth.instance,
+      _firestoreInstance = firestore ?? FirebaseFirestore.instance;
 
   FirebaseAuth get _auth => _authInstance;
   FirebaseFirestore get _db => _firestoreInstance;
@@ -89,7 +91,9 @@ class FirestoreService {
       if (groups.contains(oldName)) {
         int index = groups.indexOf(oldName);
         groups[index] = newName;
-        updates.add(MapEntry(doc.reference, {AppKeys.groups: groups.join(', ')}));
+        updates.add(
+          MapEntry(doc.reference, {AppKeys.groups: groups.join(', ')}),
+        );
       }
     }
     await _commitInBatches(updates);
@@ -111,29 +115,42 @@ class FirestoreService {
       if (groups.contains(groupName)) {
         groups.remove(groupName);
         if (groups.isEmpty) {
-          updates.add(MapEntry(doc.reference, {AppKeys.groups: FieldValue.delete()}));
+          updates.add(
+            MapEntry(doc.reference, {AppKeys.groups: FieldValue.delete()}),
+          );
         } else {
-          updates.add(MapEntry(doc.reference, {AppKeys.groups: groups.join(', ')}));
+          updates.add(
+            MapEntry(doc.reference, {AppKeys.groups: groups.join(', ')}),
+          );
         }
       }
     }
     await _commitInBatches(updates);
   }
 
-  Future<void> _commitInBatches(List<MapEntry<DocumentReference, Map<String, dynamic>>> updates) async {
+  Future<void> _commitInBatches(
+    List<MapEntry<DocumentReference, Map<String, dynamic>>> updates,
+  ) async {
     const int batchSize = 500;
     for (int i = 0; i < updates.length; i += batchSize) {
       final batch = _db.batch();
-      final chunk = updates.sublist(i, i + batchSize > updates.length ? updates.length : i + batchSize);
+      final chunk = updates.sublist(
+        i,
+        i + batchSize > updates.length ? updates.length : i + batchSize,
+      );
       for (var update in chunk) {
         batch.update(update.key, update.value);
       }
       try {
         await batch.commit();
-      } catch (e) {
-        // Log error and optionally throw if you want to abort subsequent batches
-        print("Error committing batch (index $i): $e");
-        rethrow; // Assuming we want the caller to know about the failure
+      } catch (e, stackTrace) {
+        developer.log(
+          'Error committing batch (index $i)',
+          name: 'FirestoreService',
+          error: e,
+          stackTrace: stackTrace,
+        );
+        rethrow;
       }
     }
   }
@@ -146,7 +163,9 @@ class FirestoreService {
 
     for (int i = 0; i < contacts.length; i++) {
       if (contacts[i].id != null) {
-        updates.add(MapEntry(collection.doc(contacts[i].id!), {AppKeys.orderIndex: i}));
+        updates.add(
+          MapEntry(collection.doc(contacts[i].id!), {AppKeys.orderIndex: i}),
+        );
         contacts[i].orderIndex = i;
       }
     }
@@ -273,17 +292,19 @@ class FirestoreService {
         groups = 'Family, Work, Friends';
     }
 
-    final contact = Contact(fields: {
-      AppKeys.name: name,
-      AppKeys.phone: '+380123456789',
-      AppKeys.email: 'janedoe@gmail.com',
-      AppKeys.birthday: {
-        'date': '12.12.2012',
-        'remindYearly': true,
-        'remindBefore': ['day', 'today']
+    final contact = Contact(
+      fields: {
+        AppKeys.name: name,
+        AppKeys.phone: '+380123456789',
+        AppKeys.email: 'janedoe@gmail.com',
+        AppKeys.birthday: {
+          'date': '12.12.2012',
+          'remindYearly': true,
+          'remindBefore': ['day', 'today'],
+        },
+        AppKeys.groups: groups,
       },
-      AppKeys.groups: groups
-    });
+    );
 
     contact.orderIndex = 0;
     await collection.add(contact.toMap());
