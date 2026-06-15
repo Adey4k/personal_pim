@@ -2,7 +2,6 @@
   <h1>Розумна телефонна книга (Personal PIM)</h1>
   <p><i>Кваліфікаційна робота на підтвердження ступеня фахового молодшого бакалавра</i></p>
   
-  [![Завантажити APK](https://img.shields.io/badge/Download-APK-green?style=for-the-badge&logo=android)](https://github.com/Adey4k/personal_pim/releases/latest)
   [![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
   [![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=white)](https://firebase.google.com)
   [![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
