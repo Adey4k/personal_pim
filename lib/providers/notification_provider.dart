@@ -21,7 +21,6 @@ class NotificationProvider extends ChangeNotifier {
   static const int _testNotificationId = 999;
   static const int _contactReminderIdStart = 10000;
   static const int _maxContactReminderNotifications = 500;
-  static const Duration _missedReminderGrace = Duration(hours: 24);
 
   TimeOfDay get reminderTime => _reminderTime;
 
@@ -63,7 +62,7 @@ class NotificationProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await _cancelStoredContactReminderNotifications(prefs);
 
-      final lang = prefs.getString('selected_language') ?? 'en';
+      final lang = _supportedLanguageCode(prefs.getString('selected_language'));
       final l10n = await AppLocalizations.delegate.load(Locale(lang));
       await initializeDateFormatting(lang);
       final schedules = _buildContactReminderSchedules(contacts, l10n, lang);
@@ -126,30 +125,33 @@ class NotificationProvider extends ChangeNotifier {
         if (dateField == null || dateField.remindBefore.isEmpty) continue;
 
         for (final reminderKey in dateField.remindBefore.toSet()) {
-          final occurrences = dateField.remindYearly
-              ? _yearlyReminderOccurrences(dateField, reminderKey, now)
-              : [_oneTimeReminderOccurrence(dateField, reminderKey, now)];
+          final occurrence = dateField.remindYearly
+              ? _nextYearlyReminderOccurrence(dateField, reminderKey, now)
+              : _oneTimeReminderOccurrence(dateField, reminderKey, now);
 
-          for (final occurrence
-              in occurrences.whereType<_ReminderOccurrence>()) {
-            final fieldLabel = field.key == AppKeys.birthday
-                ? l10n.birthdayEvent
-                : AppKeys.getLocalizedLabel(field.key, l10n);
-            schedules.add(
-              _ContactReminderSchedule(
-                title: '$fieldLabel - ${contact.name}',
-                body: _buildReminderBody(
-                  occurrence.eventDate,
-                  reminderKey,
-                  dateField.remindYearly,
-                  l10n,
-                  localeName,
-                ),
+          if (occurrence == null) continue;
+
+          final fieldLabel = field.key == AppKeys.birthday
+              ? l10n.birthdayEvent
+              : AppKeys.getLocalizedLabel(field.key, l10n);
+          final isBirthday = field.key == AppKeys.birthday;
+          schedules.add(
+            _ContactReminderSchedule(
+              title: '$fieldLabel - ${contact.name}',
+              body: _buildReminderBody(
+                contactName: contact.name,
+                fieldLabel: fieldLabel,
+                eventDate: occurrence.eventDate,
                 scheduledDate: occurrence.scheduledDate,
-                repeatsYearly: occurrence.repeatsYearly,
+                originalYear: dateField.year,
+                repeatsYearly: dateField.remindYearly,
+                isBirthday: isBirthday,
+                localeName: localeName,
               ),
-            );
-          }
+              scheduledDate: occurrence.scheduledDate,
+              repeatsYearly: occurrence.repeatsYearly,
+            ),
+          );
         }
       }
     }
@@ -163,41 +165,326 @@ class NotificationProvider extends ChangeNotifier {
     await _notificationService.cancel(_testNotificationId);
   }
 
-  String _buildReminderBody(
-    DateTime eventDate,
-    String reminderKey,
-    bool repeatsYearly,
-    AppLocalizations l10n,
-    String localeName,
-  ) {
+  String _buildReminderBody({
+    required String contactName,
+    required String fieldLabel,
+    required DateTime eventDate,
+    required DateTime scheduledDate,
+    required int originalYear,
+    required bool repeatsYearly,
+    required bool isBirthday,
+    required String localeName,
+  }) {
     final formatter = repeatsYearly
         ? DateFormat.MMMMd(localeName)
         : DateFormat.yMMMMd(localeName);
-    final reminderTiming = _localizedReminderTiming(reminderKey, l10n);
+    final eventDateText = formatter.format(eventDate);
+    final daysUntil = _dateOnly(
+      eventDate,
+    ).difference(_dateOnly(scheduledDate)).inDays.clamp(0, 100000).toInt();
+    final age = isBirthday && originalYear > 0
+        ? eventDate.year - originalYear
+        : null;
 
-    return '${formatter.format(eventDate)} ($reminderTiming)';
+    switch (_languageCode(localeName)) {
+      case 'de':
+        return isBirthday
+            ? _buildGermanBirthdayBody(
+                contactName,
+                eventDateText,
+                daysUntil,
+                age,
+              )
+            : _buildGermanEventBody(
+                contactName,
+                fieldLabel,
+                eventDateText,
+                daysUntil,
+              );
+      case 'es':
+        return isBirthday
+            ? _buildSpanishBirthdayBody(
+                contactName,
+                eventDateText,
+                daysUntil,
+                age,
+              )
+            : _buildSpanishEventBody(
+                contactName,
+                fieldLabel,
+                eventDateText,
+                daysUntil,
+              );
+      case 'fr':
+        return isBirthday
+            ? _buildFrenchBirthdayBody(
+                contactName,
+                eventDateText,
+                daysUntil,
+                age,
+              )
+            : _buildFrenchEventBody(
+                contactName,
+                fieldLabel,
+                eventDateText,
+                daysUntil,
+              );
+      case 'pl':
+        return isBirthday
+            ? _buildPolishBirthdayBody(
+                contactName,
+                eventDateText,
+                daysUntil,
+                age,
+              )
+            : _buildPolishEventBody(
+                contactName,
+                fieldLabel,
+                eventDateText,
+                daysUntil,
+              );
+      case 'uk':
+        return isBirthday
+            ? _buildUkrainianBirthdayBody(
+                contactName,
+                eventDateText,
+                daysUntil,
+                age,
+              )
+            : _buildUkrainianEventBody(
+                contactName,
+                fieldLabel,
+                eventDateText,
+                daysUntil,
+              );
+      default:
+        return isBirthday
+            ? _buildEnglishBirthdayBody(
+                contactName,
+                eventDateText,
+                daysUntil,
+                age,
+              )
+            : _buildEnglishEventBody(
+                contactName,
+                fieldLabel,
+                eventDateText,
+                daysUntil,
+              );
+    }
   }
 
-  String _localizedReminderTiming(String reminderKey, AppLocalizations l10n) {
-    switch (reminderKey) {
-      case 'halfYear':
-        return l10n.halfYear;
-      case 'threeMonths':
-        return l10n.threeMonths;
-      case 'month':
-        return l10n.month;
-      case 'twoWeeks':
-        return l10n.twoWeeks;
-      case 'week':
-        return l10n.week;
-      case 'threeDays':
-        return l10n.threeDays;
-      case 'day':
-        return '1 ${l10n.day}';
-      case 'today':
-      default:
-        return l10n.today;
+  String _buildEnglishBirthdayBody(
+    String contactName,
+    String eventDateText,
+    int daysUntil,
+    int? age,
+  ) {
+    final ageText = age == null ? '' : ' $contactName turns $age.';
+    if (daysUntil == 0) return "Today is $contactName's birthday.$ageText";
+    if (daysUntil == 1) return "Tomorrow is $contactName's birthday.$ageText";
+    if (daysUntil <= 14) {
+      return "In $daysUntil days, $contactName has a birthday.$ageText";
     }
+    return "$contactName's birthday is on $eventDateText.$ageText";
+  }
+
+  String _buildEnglishEventBody(
+    String contactName,
+    String fieldLabel,
+    String eventDateText,
+    int daysUntil,
+  ) {
+    if (daysUntil == 0) return 'Today: $fieldLabel for $contactName.';
+    if (daysUntil == 1) return 'Tomorrow: $fieldLabel for $contactName.';
+    if (daysUntil <= 14) {
+      return 'In $daysUntil days: $fieldLabel for $contactName.';
+    }
+    return '$fieldLabel for $contactName is on $eventDateText.';
+  }
+
+  String _buildGermanBirthdayBody(
+    String contactName,
+    String eventDateText,
+    int daysUntil,
+    int? age,
+  ) {
+    final ageText = age == null ? '' : ' $contactName wird $age.';
+    if (daysUntil == 0) return 'Heute hat $contactName Geburtstag.$ageText';
+    if (daysUntil == 1) return 'Morgen hat $contactName Geburtstag.$ageText';
+    if (daysUntil <= 14) {
+      return 'In $daysUntil Tagen hat $contactName Geburtstag.$ageText';
+    }
+    return '$contactName hat am $eventDateText Geburtstag.$ageText';
+  }
+
+  String _buildGermanEventBody(
+    String contactName,
+    String fieldLabel,
+    String eventDateText,
+    int daysUntil,
+  ) {
+    if (daysUntil == 0) return 'Heute: $fieldLabel für $contactName.';
+    if (daysUntil == 1) return 'Morgen: $fieldLabel für $contactName.';
+    if (daysUntil <= 14) {
+      return 'In $daysUntil Tagen: $fieldLabel für $contactName.';
+    }
+    return '$fieldLabel für $contactName ist am $eventDateText.';
+  }
+
+  String _buildSpanishBirthdayBody(
+    String contactName,
+    String eventDateText,
+    int daysUntil,
+    int? age,
+  ) {
+    final ageText = age == null ? '' : ' $contactName cumple $age.';
+    if (daysUntil == 0) return 'Hoy es el cumpleaños de $contactName.$ageText';
+    if (daysUntil == 1) {
+      return 'Mañana es el cumpleaños de $contactName.$ageText';
+    }
+    if (daysUntil <= 14) {
+      return 'En $daysUntil días es el cumpleaños de $contactName.$ageText';
+    }
+    return 'El cumpleaños de $contactName es el $eventDateText.$ageText';
+  }
+
+  String _buildSpanishEventBody(
+    String contactName,
+    String fieldLabel,
+    String eventDateText,
+    int daysUntil,
+  ) {
+    if (daysUntil == 0) return 'Hoy: $fieldLabel de $contactName.';
+    if (daysUntil == 1) return 'Mañana: $fieldLabel de $contactName.';
+    if (daysUntil <= 14) {
+      return 'En $daysUntil días: $fieldLabel de $contactName.';
+    }
+    return '$fieldLabel de $contactName es el $eventDateText.';
+  }
+
+  String _buildFrenchBirthdayBody(
+    String contactName,
+    String eventDateText,
+    int daysUntil,
+    int? age,
+  ) {
+    final ageText = age == null ? '' : ' $contactName fête ses $age ans.';
+    if (daysUntil == 0) {
+      return "Aujourd'hui, c'est l'anniversaire de $contactName.$ageText";
+    }
+    if (daysUntil == 1) {
+      return "Demain, c'est l'anniversaire de $contactName.$ageText";
+    }
+    if (daysUntil <= 14) {
+      return "Dans $daysUntil jours, c'est l'anniversaire de $contactName.$ageText";
+    }
+    return "L'anniversaire de $contactName est le $eventDateText.$ageText";
+  }
+
+  String _buildFrenchEventBody(
+    String contactName,
+    String fieldLabel,
+    String eventDateText,
+    int daysUntil,
+  ) {
+    if (daysUntil == 0) return "Aujourd'hui : $fieldLabel pour $contactName.";
+    if (daysUntil == 1) return 'Demain : $fieldLabel pour $contactName.';
+    if (daysUntil <= 14) {
+      return 'Dans $daysUntil jours : $fieldLabel pour $contactName.';
+    }
+    return '$fieldLabel pour $contactName est le $eventDateText.';
+  }
+
+  String _buildPolishBirthdayBody(
+    String contactName,
+    String eventDateText,
+    int daysUntil,
+    int? age,
+  ) {
+    final ageText = age == null ? '' : ' $contactName kończy $age lat.';
+    if (daysUntil == 0) return 'Dzisiaj $contactName ma urodziny.$ageText';
+    if (daysUntil == 1) return 'Jutro $contactName ma urodziny.$ageText';
+    if (daysUntil <= 14) {
+      return 'Za $daysUntil ${_polishDayWord(daysUntil)} $contactName ma urodziny.$ageText';
+    }
+    return '$contactName ma urodziny $eventDateText.$ageText';
+  }
+
+  String _buildPolishEventBody(
+    String contactName,
+    String fieldLabel,
+    String eventDateText,
+    int daysUntil,
+  ) {
+    if (daysUntil == 0) return 'Dzisiaj: $fieldLabel u $contactName.';
+    if (daysUntil == 1) return 'Jutro: $fieldLabel u $contactName.';
+    if (daysUntil <= 14) {
+      return 'Za $daysUntil ${_polishDayWord(daysUntil)}: $fieldLabel u $contactName.';
+    }
+    return '$fieldLabel u $contactName jest $eventDateText.';
+  }
+
+  String _buildUkrainianBirthdayBody(
+    String contactName,
+    String eventDateText,
+    int daysUntil,
+    int? age,
+  ) {
+    final ageText = age == null ? '' : ', виповнюється $age';
+    if (daysUntil == 0) {
+      return 'Сьогодні у $contactName день народження$ageText.';
+    }
+    if (daysUntil == 1) {
+      return 'Завтра у $contactName день народження$ageText.';
+    }
+    if (daysUntil <= 14) {
+      return 'Через $daysUntil ${_ukrainianDayWord(daysUntil)} у $contactName день народження$ageText.';
+    }
+    return 'У $contactName день народження $eventDateText$ageText.';
+  }
+
+  String _buildUkrainianEventBody(
+    String contactName,
+    String fieldLabel,
+    String eventDateText,
+    int daysUntil,
+  ) {
+    if (daysUntil == 0) return 'Сьогодні у $contactName: $fieldLabel.';
+    if (daysUntil == 1) return 'Завтра у $contactName: $fieldLabel.';
+    if (daysUntil <= 14) {
+      return 'Через $daysUntil ${_ukrainianDayWord(daysUntil)} у $contactName: $fieldLabel.';
+    }
+    return 'У $contactName подія "$fieldLabel" $eventDateText.';
+  }
+
+  String _languageCode(String localeName) {
+    return localeName.split(RegExp(r'[-_]')).first.toLowerCase();
+  }
+
+  String _ukrainianDayWord(int days) {
+    final mod10 = days % 10;
+    final mod100 = days % 100;
+    if (mod10 == 1 && mod100 != 11) return 'день';
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+      return 'дні';
+    }
+    return 'днів';
+  }
+
+  String _polishDayWord(int days) {
+    return days == 1 ? 'dzień' : 'dni';
+  }
+
+  String _supportedLanguageCode(String? languageCode) {
+    if (['de', 'en', 'es', 'fr', 'pl', 'uk'].contains(languageCode)) {
+      return languageCode!;
+    }
+    return 'en';
+  }
+
+  DateTime _dateOnly(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
   }
 
   _ContactDateField? _parseContactDateField(String key, dynamic value) {
@@ -294,74 +581,10 @@ class NotificationProvider extends ChangeNotifier {
       _reminderTime.minute,
     );
 
-    if (!scheduledDate.isAfter(now)) {
-      if (!_canCatchUpReminder(
-        scheduledDate: scheduledDate,
-        eventDate: eventDate,
-        now: now,
-      )) {
-        return null;
-      }
-
-      return _ReminderOccurrence(
-        scheduledDate: _catchUpDate(now),
-        eventDate: eventDate,
-        repeatsYearly: false,
-      );
-    }
+    if (!scheduledDate.isAfter(now)) return null;
 
     return _ReminderOccurrence(
       scheduledDate: scheduledDate,
-      eventDate: eventDate,
-      repeatsYearly: false,
-    );
-  }
-
-  List<_ReminderOccurrence> _yearlyReminderOccurrences(
-    _ContactDateField field,
-    String reminderKey,
-    DateTime now,
-  ) {
-    final occurrences = <_ReminderOccurrence>[];
-    final catchUp = _missedYearlyReminderOccurrence(field, reminderKey, now);
-    if (catchUp != null) {
-      occurrences.add(catchUp);
-    }
-
-    final next = _nextYearlyReminderOccurrence(field, reminderKey, now);
-    if (next != null) {
-      occurrences.add(next);
-    }
-
-    return occurrences;
-  }
-
-  _ReminderOccurrence? _missedYearlyReminderOccurrence(
-    _ContactDateField field,
-    String reminderKey,
-    DateTime now,
-  ) {
-    final eventDate = _dateWithClampedDay(now.year, field.month, field.day);
-    final reminderDate = _applyReminderOffset(eventDate, reminderKey);
-    final scheduledDate = DateTime(
-      reminderDate.year,
-      reminderDate.month,
-      reminderDate.day,
-      _reminderTime.hour,
-      _reminderTime.minute,
-    );
-
-    if (scheduledDate.isAfter(now)) return null;
-    if (!_canCatchUpReminder(
-      scheduledDate: scheduledDate,
-      eventDate: eventDate,
-      now: now,
-    )) {
-      return null;
-    }
-
-    return _ReminderOccurrence(
-      scheduledDate: _catchUpDate(now),
       eventDate: eventDate,
       repeatsYearly: false,
     );
@@ -393,34 +616,6 @@ class NotificationProvider extends ChangeNotifier {
     }
 
     return null;
-  }
-
-  bool _canCatchUpReminder({
-    required DateTime scheduledDate,
-    required DateTime eventDate,
-    required DateTime now,
-  }) {
-    final today = _dateOnly(now);
-    final eventDay = _dateOnly(eventDate);
-
-    return !eventDay.isBefore(today) &&
-        now.difference(scheduledDate) <= _missedReminderGrace;
-  }
-
-  DateTime _catchUpDate(DateTime now) {
-    final catchUp = now.add(const Duration(minutes: 1));
-    return DateTime(
-      catchUp.year,
-      catchUp.month,
-      catchUp.day,
-      catchUp.hour,
-      catchUp.minute,
-      catchUp.second,
-    );
-  }
-
-  DateTime _dateOnly(DateTime date) {
-    return DateTime(date.year, date.month, date.day);
   }
 
   DateTime _applyReminderOffset(DateTime eventDate, String reminderKey) {

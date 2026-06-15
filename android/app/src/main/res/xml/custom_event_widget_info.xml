@@ -6,6 +6,7 @@
     android:minResizeWidth="180dp"
     android:minResizeHeight="40dp"
     android:updatePeriodMillis="3600000"
+    android:previewImage="@drawable/preview_custom_event_widget"
     android:previewLayout="@layout/custom_event_widget"
     android:description="@string/custom_event_widget_desc"
     android:resizeMode="horizontal|vertical"

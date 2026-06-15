@@ -7,6 +7,8 @@ import 'dart:io';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
+  static const String _androidNotificationIcon = 'ic_notification';
+
   factory NotificationService() => _instance;
   NotificationService._internal();
 
@@ -24,7 +26,7 @@ class NotificationService {
     }
 
     const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings(_androidNotificationIcon);
 
     const DarwinInitializationSettings iosSettings =
         DarwinInitializationSettings(
@@ -75,6 +77,7 @@ class NotificationService {
           'contact_reminder_channel',
           'Contact Reminders',
           channelDescription: 'Birthday and contact event reminders',
+          icon: _androidNotificationIcon,
           importance: Importance.max,
           priority: Priority.high,
         ),

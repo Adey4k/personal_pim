@@ -99,7 +99,10 @@ void main() {
         final firstArgs =
             scheduleCalls.first.arguments as Map<dynamic, dynamic>;
         expect(firstArgs['title'], 'Birthday - Alex');
-        expect(firstArgs['body'], 'June 15 (1 day)');
+        expect(
+          firstArgs['body'],
+          "Tomorrow is Alex's birthday. Alex turns 108.",
+        );
         expect(firstArgs['scheduledDateTime'], startsWith('2098-06-14T'));
         expect(
           firstArgs['matchDateTimeComponents'],
@@ -107,6 +110,36 @@ void main() {
         );
       },
     );
+
+    test('uses supported German notification text', () async {
+      SharedPreferences.setMockInitialValues({'selected_language': 'de'});
+      notificationProvider = NotificationProvider(
+        now: () => DateTime(2098, 6, 14, 9),
+      );
+
+      await notificationProvider.scheduleContactEventNotifications([
+        Contact(
+          id: 'contact-1',
+          fields: {
+            AppKeys.name: 'Alex',
+            AppKeys.birthday: {
+              'date': '15.06.1990',
+              'remindYearly': true,
+              'remindBefore': ['day'],
+            },
+          },
+        ),
+      ]);
+
+      final scheduleCalls = notificationCalls
+          .where((call) => call.method == 'zonedSchedule')
+          .toList();
+
+      expect(scheduleCalls, hasLength(1));
+      final args = scheduleCalls.single.arguments as Map<dynamic, dynamic>;
+      expect(args['title'], 'Geburtstag - Alex');
+      expect(args['body'], 'Morgen hat Alex Geburtstag. Alex wird 108.');
+    });
 
     test('yearless contact events are scheduled as yearly reminders', () async {
       notificationProvider = NotificationProvider(
@@ -134,7 +167,7 @@ void main() {
       expect(scheduleCalls, hasLength(1));
       final args = scheduleCalls.single.arguments as Map<dynamic, dynamic>;
       expect(args['title'], 'Anniversary - Alex');
-      expect(args['body'], 'June 20 (on the day)');
+      expect(args['body'], 'Today: Anniversary for Alex.');
       expect(args['scheduledDateTime'], startsWith('2098-06-20T'));
       expect(
         args['matchDateTimeComponents'],
@@ -142,8 +175,37 @@ void main() {
       );
     });
 
+    test('custom contact event reminder text explains tomorrow', () async {
+      notificationProvider = NotificationProvider(
+        now: () => DateTime(2098, 6, 19, 9),
+      );
+
+      await notificationProvider.scheduleContactEventNotifications([
+        Contact(
+          id: 'contact-1',
+          fields: {
+            AppKeys.name: 'Alex',
+            'Anniversary': {
+              'date': '20.06.0000',
+              'remindYearly': true,
+              'remindBefore': ['day'],
+            },
+          },
+        ),
+      ]);
+
+      final scheduleCalls = notificationCalls
+          .where((call) => call.method == 'zonedSchedule')
+          .toList();
+
+      expect(scheduleCalls, hasLength(1));
+      final args = scheduleCalls.single.arguments as Map<dynamic, dynamic>;
+      expect(args['title'], 'Anniversary - Alex');
+      expect(args['body'], 'Tomorrow: Anniversary for Alex.');
+    });
+
     test(
-      'missed same-day reminders are caught up once and kept yearly',
+      'missed same-day yearly reminders wait for the next yearly slot',
       () async {
         notificationProvider = NotificationProvider(
           now: () => DateTime(2098, 6, 14, 10, 30),
@@ -167,18 +229,13 @@ void main() {
             .where((call) => call.method == 'zonedSchedule')
             .toList();
 
-        expect(scheduleCalls, hasLength(2));
+        expect(scheduleCalls, hasLength(1));
 
-        final catchUpArgs =
-            scheduleCalls.first.arguments as Map<dynamic, dynamic>;
         final yearlyArgs =
-            scheduleCalls.last.arguments as Map<dynamic, dynamic>;
+            scheduleCalls.single.arguments as Map<dynamic, dynamic>;
 
-        expect(catchUpArgs['scheduledDateTime'], startsWith('2098-06-14T'));
-        expect(catchUpArgs['body'], 'June 14 (on the day)');
-        expect(catchUpArgs['scheduledDateTime'], endsWith(':31:00'));
-        expect(catchUpArgs.containsKey('matchDateTimeComponents'), isFalse);
         expect(yearlyArgs['scheduledDateTime'], startsWith('2099-06-14T'));
+        expect(yearlyArgs['body'], "Today is Alex's birthday. Alex turns 109.");
         expect(
           yearlyArgs['matchDateTimeComponents'],
           DateTimeComponents.dateAndTime.index,
