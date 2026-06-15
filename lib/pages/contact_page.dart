@@ -9,6 +9,7 @@ import 'package:personal_pim/services/speech_service.dart';
 import '../models/contact.dart';
 import '../services/firestore_service.dart';
 import '../utils/constants.dart';
+import '../utils/group_style.dart';
 import '../utils/showcase_utils.dart';
 import '../utils/validators.dart';
 import '../widgets/contact/dynamic_field_widget.dart';
@@ -77,19 +78,6 @@ class _ContactPageState extends State<ContactPage> {
 
   Set<String> _availableGroups = {};
   List<String> _selectedGroups = [];
-
-  final List<MaterialColor> _availableColors = [
-    Colors.blue,
-    Colors.green,
-    Colors.orange,
-    Colors.purple,
-    Colors.teal,
-    Colors.pink,
-    Colors.indigo,
-    Colors.brown,
-    Colors.cyan,
-    Colors.deepOrange,
-  ];
 
   @override
   void initState() {
@@ -198,8 +186,8 @@ class _ContactPageState extends State<ContactPage> {
     super.dispose();
   }
 
-  MaterialColor _getGroupColor(String groupName) =>
-      _availableColors[groupName.hashCode.abs() % _availableColors.length];
+  Color _getGroupColor(String groupName) =>
+      GroupStyle.colorFor(context, groupName);
 
   IconData _getIconForType(FieldType type) {
     switch (type) {
@@ -245,11 +233,12 @@ class _ContactPageState extends State<ContactPage> {
             final groupToAdd = existingMatch ?? g;
 
             if (!_availableGroups.contains(groupToAdd) &&
-                _availableGroups.length < 10) {
+                _availableGroups.length < maxGroupCount) {
               _availableGroups.add(groupToAdd);
             }
             if (!_selectedGroups.contains(groupToAdd) &&
-                _selectedGroups.length < 10) {
+                _availableGroups.contains(groupToAdd) &&
+                _selectedGroups.length < maxGroupCount) {
               _selectedGroups.add(groupToAdd);
             }
           }
@@ -1031,16 +1020,16 @@ class _ContactPageState extends State<ContactPage> {
             return;
           }
           if (!_availableGroups.contains(newGroup) &&
-              _availableGroups.length >= 10) {
+              _availableGroups.length >= maxGroupCount) {
             ScaffoldMessenger.of(
               context,
-            ).showSnackBar(SnackBar(content: Text(l10n.max10Groups)));
+            ).showSnackBar(SnackBar(content: Text(l10n.maxGroups)));
             return;
           }
           setState(() {
             _availableGroups.add(newGroup);
             if (!_selectedGroups.contains(newGroup) &&
-                _selectedGroups.length < 10) {
+                _selectedGroups.length < maxGroupCount) {
               _selectedGroups.add(newGroup);
             }
             field.valueController.text = _selectedGroups.join(', ');
@@ -1052,12 +1041,12 @@ class _ContactPageState extends State<ContactPage> {
         onToggleGroup: (group, val, setModalState) {
           setState(() {
             if (val == true) {
-              if (_selectedGroups.length < 10) {
+              if (_selectedGroups.length < maxGroupCount) {
                 _selectedGroups.add(group);
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.max10SelectedGroups)),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(l10n.maxSelectedGroups)));
               }
             } else {
               _selectedGroups.remove(group);
@@ -1240,10 +1229,10 @@ class _ContactPageState extends State<ContactPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Theme.of(
                             context,
-                          ).colorScheme.tertiary,
+                          ).colorScheme.inversePrimary,
                           foregroundColor: Theme.of(
                             context,
-                          ).colorScheme.onTertiary,
+                          ).colorScheme.onSurface,
                         ),
                       ),
                     ),

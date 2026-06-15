@@ -324,10 +324,10 @@ class AppLocalizationsUk extends AppLocalizations {
   String get groupNameNoCommas => 'Назва групи не може містити кому!';
 
   @override
-  String get max10Groups => 'Максимум 10 груп!';
+  String get maxGroups => 'Максимум 15 груп!';
 
   @override
-  String get max10SelectedGroups => 'Можна обрати не більше 10 груп';
+  String get maxSelectedGroups => 'Можна обрати не більше 15 груп';
 
   @override
   String get failedToRecognizeAi =>

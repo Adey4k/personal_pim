@@ -409,6 +409,8 @@ class _CalendarPageState extends State<CalendarPage> {
                 backgroundColor: Theme.of(context).colorScheme.inversePrimary,
               ),
               floatingActionButton: FloatingActionButton(
+                backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+                foregroundColor: Theme.of(context).colorScheme.onSurface,
                 onPressed: () => _showAddTodoSheet(),
                 tooltip: l10n.addTodo,
                 child: const Icon(Icons.add_task),

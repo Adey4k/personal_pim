@@ -324,10 +324,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get groupNameNoCommas => 'Nazwa grupy nie może zawierać przecinków!';
 
   @override
-  String get max10Groups => 'Maksymalnie 10 grup!';
+  String get maxGroups => 'Maksymalnie 15 grup!';
 
   @override
-  String get max10SelectedGroups => 'Można wybrać maksymalnie 10 grup';
+  String get maxSelectedGroups => 'Można wybrać maksymalnie 15 grup';
 
   @override
   String get failedToRecognizeAi =>

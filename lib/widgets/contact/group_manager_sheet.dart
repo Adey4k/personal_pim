@@ -47,7 +47,10 @@ class GroupManagerSheet extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 l10n.manageGroups,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 16),
               Row(
@@ -60,8 +63,10 @@ class GroupManagerSheet extends StatelessWidget {
                         hintText: l10n.createNewGroup,
                         counterText: '',
                         isDense: true,
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(color: Colors.grey.shade300),
@@ -77,8 +82,9 @@ class GroupManagerSheet extends StatelessWidget {
                       color: Theme.of(context).colorScheme.primary,
                       size: 36,
                     ),
-                    onPressed: () => onAddGroup(groupInputController.text, setModalState),
-                  )
+                    onPressed: () =>
+                        onAddGroup(groupInputController.text, setModalState),
+                  ),
                 ],
               ),
               const Divider(height: 24),
@@ -91,8 +97,9 @@ class GroupManagerSheet extends StatelessWidget {
                   ),
                 ),
               ConstrainedBox(
-                constraints:
-                    BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.4,
+                ),
                 child: ListView.builder(
                   shrinkWrap: true,
                   itemCount: availableGroups.length,
@@ -110,26 +117,31 @@ class GroupManagerSheet extends StatelessWidget {
                           onToggleGroup(group, val ?? false, setModalState);
                         },
                       ),
-                      title: Row(children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: color.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: color.withValues(alpha: 0.6)),
-                          ),
-                          child: Text(
-                            group,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.white
-                                  : Colors.black87,
-                              fontWeight: FontWeight.bold,
+                      title: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: color.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: color.withValues(alpha: 0.6),
+                              ),
+                            ),
+                            child: Text(
+                              group,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
-                      ]),
+                        ],
+                      ),
                       trailing: IconButton(
                         icon: const Icon(Icons.edit, color: Colors.grey),
                         tooltip: l10n.configure,

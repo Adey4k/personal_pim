@@ -706,17 +706,17 @@ abstract class AppLocalizations {
   /// **'Group name cannot contain commas!'**
   String get groupNameNoCommas;
 
-  /// No description provided for @max10Groups.
+  /// No description provided for @maxGroups.
   ///
   /// In en, this message translates to:
-  /// **'Maximum 10 groups!'**
-  String get max10Groups;
+  /// **'Maximum 15 groups!'**
+  String get maxGroups;
 
-  /// No description provided for @max10SelectedGroups.
+  /// No description provided for @maxSelectedGroups.
   ///
   /// In en, this message translates to:
-  /// **'Maximum 10 groups can be selected'**
-  String get max10SelectedGroups;
+  /// **'Maximum 15 groups can be selected'**
+  String get maxSelectedGroups;
 
   /// No description provided for @failedToRecognizeAi.
   ///

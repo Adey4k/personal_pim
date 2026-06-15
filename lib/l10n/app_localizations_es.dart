@@ -326,11 +326,10 @@ class AppLocalizationsEs extends AppLocalizations {
       '¡El nombre del grupo no puede contener comas!';
 
   @override
-  String get max10Groups => '¡Máximo 10 grupos!';
+  String get maxGroups => '¡Máximo 15 grupos!';
 
   @override
-  String get max10SelectedGroups =>
-      'Se pueden seleccionar como máximo 10 grupos';
+  String get maxSelectedGroups => 'Se pueden seleccionar como máximo 15 grupos';
 
   @override
   String get failedToRecognizeAi =>

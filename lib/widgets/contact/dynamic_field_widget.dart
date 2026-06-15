@@ -36,7 +36,9 @@ class DynamicFieldWidget extends StatelessWidget {
 
     return Container(
       color: field.isAiGenerated
-          ? Theme.of(context).colorScheme.tertiaryContainer.withValues(alpha: 0.3)
+          ? Theme.of(
+              context,
+            ).colorScheme.tertiaryContainer.withValues(alpha: 0.3)
           : Colors.transparent,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
@@ -68,7 +70,10 @@ class DynamicFieldWidget extends StatelessWidget {
                         child: Text(
                           field.keyController.text.isEmpty
                               ? l10n.newField
-                              : AppKeys.getLocalizedLabel(field.keyController.text, l10n),
+                              : AppKeys.getLocalizedLabel(
+                                  field.keyController.text,
+                                  l10n,
+                                ),
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.onSurface,
                             fontSize: 16,
@@ -84,10 +89,7 @@ class DynamicFieldWidget extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 16),
-            Expanded(
-              flex: 3,
-              child: _buildInput(context, l10n),
-            ),
+            Expanded(flex: 3, child: _buildInput(context, l10n)),
           ],
         ),
       ),
@@ -96,7 +98,9 @@ class DynamicFieldWidget extends StatelessWidget {
 
   Widget _buildInput(BuildContext context, AppLocalizations l10n) {
     if (field.keyController.text == AppKeys.groups) {
-      final List<String> selectedGroups = Contact.parseGroups(field.valueController.text);
+      final List<String> selectedGroups = Contact.parseGroups(
+        field.valueController.text,
+      );
       return InkWell(
         onTap: onManageGroups,
         borderRadius: BorderRadius.circular(8),
@@ -119,16 +123,17 @@ class DynamicFieldWidget extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black87,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       backgroundColor: color.withValues(alpha: 0.3),
                       side: BorderSide(color: color.withValues(alpha: 0.6)),
                       visualDensity: VisualDensity.compact,
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4.0,
+                        vertical: 0.0,
+                      ),
                     );
                   }).toList(),
                 ),
@@ -172,9 +177,9 @@ class DynamicFieldWidget extends StatelessWidget {
                 child: Text(
                   field.valueController.text.isEmpty
                       ? l10n.selectDate
-                      : field.valueController.text.endsWith('.0000') 
-                          ? field.valueController.text.substring(0, 5)
-                          : field.valueController.text,
+                      : field.valueController.text.endsWith('.0000')
+                      ? field.valueController.text.substring(0, 5)
+                      : field.valueController.text,
                   style: TextStyle(
                     color: field.valueController.text.isEmpty
                         ? Colors.grey
@@ -308,7 +313,9 @@ class DynamicFieldWidget extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
@@ -368,21 +375,32 @@ class DynamicFieldWidget extends StatelessWidget {
 
   String _getRemindersSummary(List<String> selected, AppLocalizations l10n) {
     if (selected.isEmpty) return l10n.tapToSelect;
-    if (selected.length == 1) return _getLocalizedInterval(selected.first, l10n);
+    if (selected.length == 1) {
+      return _getLocalizedInterval(selected.first, l10n);
+    }
     return "${selected.length} ...";
   }
 
   String _getLocalizedInterval(String key, AppLocalizations l10n) {
     switch (key) {
-      case 'halfYear': return l10n.halfYear;
-      case 'threeMonths': return l10n.threeMonths;
-      case 'month': return l10n.month;
-      case 'twoWeeks': return l10n.twoWeeks;
-      case 'week': return l10n.week;
-      case 'threeDays': return l10n.threeDays;
-      case 'day': return l10n.day;
-      case 'today': return l10n.today;
-      default: return key;
+      case 'halfYear':
+        return l10n.halfYear;
+      case 'threeMonths':
+        return l10n.threeMonths;
+      case 'month':
+        return l10n.month;
+      case 'twoWeeks':
+        return l10n.twoWeeks;
+      case 'week':
+        return l10n.week;
+      case 'threeDays':
+        return l10n.threeDays;
+      case 'day':
+        return l10n.day;
+      case 'today':
+        return l10n.today;
+      default:
+        return key;
     }
   }
 }

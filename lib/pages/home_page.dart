@@ -11,6 +11,7 @@ import '../services/home_widget_service.dart';
 import '../services/firestore_service.dart';
 import '../models/contact.dart';
 import '../utils/constants.dart';
+import '../utils/group_style.dart';
 import '../utils/showcase_utils.dart';
 import '../utils/validators.dart';
 import '../l10n/app_localizations.dart';
@@ -80,21 +81,8 @@ class _HomePageState extends State<HomePage> {
 
   // Removed columns caching and width calculation, now in ContactsProvider
 
-  MaterialColor _getGroupColor(String groupName) {
-    final List<MaterialColor> colors = [
-      Colors.blue,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.teal,
-      Colors.pink,
-      Colors.indigo,
-      Colors.brown,
-      Colors.cyan,
-      Colors.deepOrange,
-    ];
-    return colors[groupName.hashCode.abs() % colors.length];
-  }
+  Color _getGroupColor(String groupName) =>
+      GroupStyle.colorFor(context, groupName);
 
   // Removed column width calc and sorting logic, now in ContactsProvider
 
@@ -256,6 +244,8 @@ class _HomePageState extends State<HomePage> {
             title: l10n.onboardingAddContactTitle,
             description: l10n.onboardingAddContactDesc,
             child: FloatingActionButton(
+              backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+              foregroundColor: Theme.of(context).colorScheme.onSurface,
               onPressed: () async {
                 final allFieldTypes = _inferFieldTypes(contacts);
                 await Navigator.push(

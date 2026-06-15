@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
+import '../../utils/group_style.dart';
 
 class SearchFilterBar extends StatelessWidget {
   final TextEditingController searchController;
@@ -44,10 +45,9 @@ class SearchFilterBar extends StatelessWidget {
                     )
                   : null,
               filled: true,
-              fillColor: Theme.of(context)
-                  .colorScheme
-                  .surfaceContainerHighest
-                  .withValues(alpha: 0.3),
+              fillColor: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12.0),
                 borderSide: BorderSide.none,
@@ -60,7 +60,10 @@ class SearchFilterBar extends StatelessWidget {
         ),
         if (existingGroups.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 4.0,
+            ),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -84,11 +87,11 @@ class SearchFilterBar extends StatelessWidget {
                           group,
                           style: TextStyle(
                             color: isSelected
-                                ? Colors.white
-                                : (Theme.of(context).brightness == Brightness.dark
-                                    ? Colors.white
-                                    : Colors.black87),
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ? GroupStyle.foregroundFor(color)
+                                : Theme.of(context).colorScheme.onSurface,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                         ),
                         selected: isSelected,

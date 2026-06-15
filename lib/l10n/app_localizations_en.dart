@@ -321,10 +321,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get groupNameNoCommas => 'Group name cannot contain commas!';
 
   @override
-  String get max10Groups => 'Maximum 10 groups!';
+  String get maxGroups => 'Maximum 15 groups!';
 
   @override
-  String get max10SelectedGroups => 'Maximum 10 groups can be selected';
+  String get maxSelectedGroups => 'Maximum 15 groups can be selected';
 
   @override
   String get failedToRecognizeAi => 'Failed to recognize contact data in text.';

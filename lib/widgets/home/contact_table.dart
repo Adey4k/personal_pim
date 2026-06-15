@@ -37,7 +37,10 @@ class ContactTable extends StatelessWidget {
 
     if (allContacts.isEmpty) {
       return Center(
-        child: Text(l10n.contactListEmpty, style: const TextStyle(fontSize: 18)),
+        child: Text(
+          l10n.contactListEmpty,
+          style: const TextStyle(fontSize: 18),
+        ),
       );
     }
 
@@ -74,38 +77,51 @@ class ContactTable extends StatelessWidget {
                 // Table Header
                 Container(
                   decoration: BoxDecoration(
-                    border: Border(bottom: BorderSide(color: Colors.grey.shade300, width: 2)),
+                    border: Border(
+                      bottom: BorderSide(color: Colors.grey.shade300, width: 2),
+                    ),
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 12.0),
                   child: Row(
                     children: [
-                      ...columns.map((colName) => SizedBox(
-                            width: columnWidths[colName],
-                            child: InkWell(
-                              onTap: () => onSort(colName),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        AppKeys.getLocalizedLabel(colName, l10n),
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
+                      ...columns.map(
+                        (colName) => SizedBox(
+                          width: columnWidths[colName],
+                          child: InkWell(
+                            onTap: () => onSort(colName),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      AppKeys.getLocalizedLabel(colName, l10n),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
                                       ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    if (sortColumn == colName)
-                                      Icon(
-                                        sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
-                                        size: 16,
-                                      ),
-                                  ],
-                                ),
+                                  ),
+                                  if (sortColumn == colName)
+                                    Icon(
+                                      sortAscending
+                                          ? Icons.arrow_upward
+                                          : Icons.arrow_downward,
+                                      size: 16,
+                                    ),
+                                ],
                               ),
                             ),
-                          )),
-                      const SizedBox(width: 48), // Space for reorder handle placeholder
+                          ),
+                        ),
+                      ),
+                      const SizedBox(
+                        width: 48,
+                      ), // Space for reorder handle placeholder
                     ],
                   ),
                 ),
@@ -116,7 +132,11 @@ class ContactTable extends StatelessWidget {
                     onReorderItem: (oldIndex, newIndex) {
                       if (isFilteringActive) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(l10n.reorderingDisabledWhileFiltering)),
+                          SnackBar(
+                            content: Text(
+                              l10n.reorderingDisabledWhileFiltering,
+                            ),
+                          ),
                         );
                         return;
                       }
@@ -128,7 +148,9 @@ class ContactTable extends StatelessWidget {
                         onTap: () => onTap(contact),
                         child: Container(
                           decoration: BoxDecoration(
-                            border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+                            border: Border(
+                              bottom: BorderSide(color: Colors.grey.shade200),
+                            ),
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 12.0),
                           child: Row(
@@ -142,37 +164,50 @@ class ContactTable extends StatelessWidget {
                                 } else {
                                   value = rawValue?.toString() ?? '';
                                 }
-                                
+
                                 if (value.endsWith('.0000')) {
                                   value = value.substring(0, 5);
                                 }
 
                                 Widget cellContent;
 
-                                if (colName == AppKeys.groups && value.isNotEmpty) {
-                                  List<String> groups = Contact.parseGroups(value);
+                                if (colName == AppKeys.groups &&
+                                    value.isNotEmpty) {
+                                  List<String> groups = Contact.parseGroups(
+                                    value,
+                                  );
                                   cellContent = SingleChildScrollView(
                                     scrollDirection: Axis.horizontal,
                                     child: Row(
                                       children: groups.map((g) {
                                         final color = getGroupColor(g);
                                         return Container(
-                                          margin: const EdgeInsets.only(right: 6.0),
+                                          margin: const EdgeInsets.only(
+                                            right: 6.0,
+                                          ),
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: 8.0, vertical: 4.0),
+                                            horizontal: 8.0,
+                                            vertical: 4.0,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: color.withValues(alpha: 0.3),
-                                            borderRadius: BorderRadius.circular(8.0),
-                                            border: Border.all(color: color.withValues(alpha: 0.6)),
+                                            borderRadius: BorderRadius.circular(
+                                              8.0,
+                                            ),
+                                            border: Border.all(
+                                              color: color.withValues(
+                                                alpha: 0.6,
+                                              ),
+                                            ),
                                           ),
                                           child: Text(
                                             g,
                                             style: TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w600,
-                                              color: Theme.of(context).brightness == Brightness.dark
-                                                  ? Colors.white
-                                                  : Colors.black87,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onSurface,
                                             ),
                                           ),
                                         );
@@ -182,18 +217,28 @@ class ContactTable extends StatelessWidget {
                                 } else if (value.toLowerCase() == 'true') {
                                   cellContent = const Align(
                                     alignment: Alignment.centerLeft,
-                                    child: Icon(Icons.check_circle, color: Colors.green, size: 20),
+                                    child: Icon(
+                                      Icons.check_circle,
+                                      color: Colors.green,
+                                      size: 20,
+                                    ),
                                   );
                                 } else if (value.toLowerCase() == 'false') {
                                   cellContent = const Align(
                                     alignment: Alignment.centerLeft,
-                                    child: Icon(Icons.cancel, color: Colors.red, size: 20),
+                                    child: Icon(
+                                      Icons.cancel,
+                                      color: Colors.red,
+                                      size: 20,
+                                    ),
                                   );
                                 } else {
                                   cellContent = Text(
                                     value,
                                     style: colName == AppKeys.name
-                                        ? const TextStyle(fontWeight: FontWeight.bold)
+                                        ? const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          )
                                         : null,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -203,12 +248,16 @@ class ContactTable extends StatelessWidget {
                                 return SizedBox(
                                   width: columnWidths[colName],
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16.0,
+                                    ),
                                     child: cellContent,
                                   ),
                                 );
                               }),
-                              const SizedBox(width: 48), // Match header spacer for reorder handle
+                              const SizedBox(
+                                width: 48,
+                              ), // Match header spacer for reorder handle
                             ],
                           ),
                         ),

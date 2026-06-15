@@ -326,11 +326,11 @@ class AppLocalizationsFr extends AppLocalizations {
       'Le nom du groupe ne peut pas contenir de virgules !';
 
   @override
-  String get max10Groups => 'Maximum 10 groupes !';
+  String get maxGroups => 'Maximum 15 groupes !';
 
   @override
-  String get max10SelectedGroups =>
-      'Maximum 10 groupes peuvent être sélectionnés';
+  String get maxSelectedGroups =>
+      'Maximum 15 groupes peuvent être sélectionnés';
 
   @override
   String get failedToRecognizeAi =>
