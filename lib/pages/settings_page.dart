@@ -15,6 +15,7 @@ import '../providers/notification_provider.dart';
 import '../services/firestore_service.dart';
 import '../services/auth_service.dart';
 import '../utils/constants.dart';
+import '../utils/snackbar_utils.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -218,9 +219,10 @@ class SettingsPage extends StatelessWidget {
       final contacts = await dbService.getAllContacts();
       if (contacts.isEmpty) {
         if (context.mounted) {
-          ScaffoldMessenger.of(
+          showCurrentSnackBar(
             context,
-          ).showSnackBar(SnackBar(content: Text(l10n.noDataToExport)));
+            SnackBar(content: Text(l10n.noDataToExport)),
+          );
         }
         return;
       }
@@ -252,15 +254,17 @@ class SettingsPage extends StatelessWidget {
       );
 
       if (context.mounted) {
-        ScaffoldMessenger.of(
+        showCurrentSnackBar(
           context,
-        ).showSnackBar(SnackBar(content: Text(l10n.exportSuccessful)));
+          SnackBar(content: Text(l10n.exportSuccessful)),
+        );
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
+        showCurrentSnackBar(
           context,
-        ).showSnackBar(SnackBar(content: Text('${l10n.exportFailed}: $e')));
+          SnackBar(content: Text('${l10n.exportFailed}: $e')),
+        );
       }
     }
   }
@@ -288,15 +292,17 @@ class SettingsPage extends StatelessWidget {
       await dbService.importContacts(contacts);
 
       if (context.mounted) {
-        ScaffoldMessenger.of(
+        showCurrentSnackBar(
           context,
-        ).showSnackBar(SnackBar(content: Text(l10n.importSuccessful)));
+          SnackBar(content: Text(l10n.importSuccessful)),
+        );
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
+        showCurrentSnackBar(
           context,
-        ).showSnackBar(SnackBar(content: Text('${l10n.importFailed}: $e')));
+          SnackBar(content: Text('${l10n.importFailed}: $e')),
+        );
       }
     }
   }
@@ -313,9 +319,10 @@ class SettingsPage extends StatelessWidget {
       );
       if (status != fc.PermissionStatus.granted) {
         if (context.mounted) {
-          ScaffoldMessenger.of(
+          showCurrentSnackBar(
             context,
-          ).showSnackBar(SnackBar(content: Text(l10n.permissionDenied)));
+            SnackBar(content: Text(l10n.permissionDenied)),
+          );
         }
         return;
       }
@@ -330,9 +337,10 @@ class SettingsPage extends StatelessWidget {
 
       if (nativeContacts.isEmpty) {
         if (context.mounted) {
-          ScaffoldMessenger.of(
+          showCurrentSnackBar(
             context,
-          ).showSnackBar(SnackBar(content: Text(l10n.noResultsFound)));
+            SnackBar(content: Text(l10n.noResultsFound)),
+          );
         }
         return;
       }
@@ -352,16 +360,18 @@ class SettingsPage extends StatelessWidget {
         final dbService = Provider.of<FirestoreService>(context, listen: false);
         await dbService.importContacts(selectedContacts);
         if (context.mounted) {
-          ScaffoldMessenger.of(
+          showCurrentSnackBar(
             context,
-          ).showSnackBar(SnackBar(content: Text(l10n.importSuccessful)));
+            SnackBar(content: Text(l10n.importSuccessful)),
+          );
         }
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
+        showCurrentSnackBar(
           context,
-        ).showSnackBar(SnackBar(content: Text('${l10n.error}: $e')));
+          SnackBar(content: Text('${l10n.error}: $e')),
+        );
       }
     }
   }

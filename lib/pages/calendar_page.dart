@@ -8,6 +8,7 @@ import '../services/firestore_service.dart';
 import '../pages/contact_page.dart';
 import '../widgets/todo/todo_edit_sheet.dart';
 import '../utils/constants.dart';
+import '../utils/snackbar_utils.dart';
 import 'package:provider/provider.dart';
 import '../l10n/app_localizations.dart';
 
@@ -365,15 +366,14 @@ class _CalendarPageState extends State<CalendarPage> {
         await _dbService.updateContact(contact);
 
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(l10n.save)));
+          showCurrentSnackBar(context, SnackBar(content: Text(l10n.save)));
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(
+          showCurrentSnackBar(
             context,
-          ).showSnackBar(SnackBar(content: Text('${l10n.error}: $e')));
+            SnackBar(content: Text('${l10n.error}: $e')),
+          );
         }
       }
     }
@@ -725,9 +725,10 @@ class _CalendarPageState extends State<CalendarPage> {
             onPressed: () {
               _dbService.deleteTodo(todo.id!);
               Navigator.pop(context);
-              ScaffoldMessenger.of(
+              showCurrentSnackBar(
                 context,
-              ).showSnackBar(SnackBar(content: Text(l10n.todoDeleted)));
+                SnackBar(content: Text(l10n.todoDeleted)),
+              );
             },
             child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
           ),

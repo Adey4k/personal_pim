@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../l10n/app_localizations.dart';
-
+import '../utils/snackbar_utils.dart';
 
 class VerifyEmailPage extends StatefulWidget {
   const VerifyEmailPage({super.key});
@@ -19,7 +19,10 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 3), (_) => _checkEmailVerified());
+    _timer = Timer.periodic(
+      const Duration(seconds: 3),
+      (_) => _checkEmailVerified(),
+    );
   }
 
   @override
@@ -37,7 +40,8 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
 
   void _showSnackBar(String message, {bool isError = true}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    showCurrentSnackBar(
+      context,
       SnackBar(
         content: Text(message),
         backgroundColor: isError ? Colors.red : Colors.green,
@@ -51,22 +55,38 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
     }
     final message = e.toString().replaceAll('Exception: ', '');
     switch (message) {
-      case 'invalidEmail': return l10n.invalidEmail;
-      case 'userNotFound': return l10n.userNotFound;
-      case 'wrongPassword': return l10n.wrongPassword;
-      case 'invalidCredential': return l10n.invalidCredential;
-      case 'emailAlreadyInUse': return l10n.emailAlreadyInUse;
-      case 'weakPassword': return l10n.weakPassword;
-      case 'tooManyRequests': return l10n.tooManyRequests;
-      case 'userDisabled': return l10n.userDisabled;
-      case 'authError': return l10n.authError;
-      case 'googleClientIdNotFound': return l10n.googleClientIdNotFound;
-      case 'authGoogleError': return l10n.authGoogleError;
-      case 'unknownLoginError': return l10n.unknownLoginError;
-      case 'unknownRegistrationError': return l10n.unknownRegistrationError;
-      case 'userNotAuthenticated': return l10n.userNotAuthenticated;
-      case 'unknownError': return l10n.unknownError;
-      default: return message;
+      case 'invalidEmail':
+        return l10n.invalidEmail;
+      case 'userNotFound':
+        return l10n.userNotFound;
+      case 'wrongPassword':
+        return l10n.wrongPassword;
+      case 'invalidCredential':
+        return l10n.invalidCredential;
+      case 'emailAlreadyInUse':
+        return l10n.emailAlreadyInUse;
+      case 'weakPassword':
+        return l10n.weakPassword;
+      case 'tooManyRequests':
+        return l10n.tooManyRequests;
+      case 'userDisabled':
+        return l10n.userDisabled;
+      case 'authError':
+        return l10n.authError;
+      case 'googleClientIdNotFound':
+        return l10n.googleClientIdNotFound;
+      case 'authGoogleError':
+        return l10n.authGoogleError;
+      case 'unknownLoginError':
+        return l10n.unknownLoginError;
+      case 'unknownRegistrationError':
+        return l10n.unknownRegistrationError;
+      case 'userNotAuthenticated':
+        return l10n.userNotAuthenticated;
+      case 'unknownError':
+        return l10n.unknownError;
+      default:
+        return message;
     }
   }
 
@@ -85,7 +105,11 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.mark_email_unread_outlined, size: 80, color: Colors.green),
+            const Icon(
+              Icons.mark_email_unread_outlined,
+              size: 80,
+              color: Colors.green,
+            ),
             const SizedBox(height: 24),
             Text(
               l10n.verificationEmailSentTo(user?.email ?? ''),

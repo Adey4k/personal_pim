@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/contact.dart';
 import '../../utils/constants.dart';
+import '../../utils/snackbar_utils.dart';
 import '../../l10n/app_localizations.dart';
 
 class ContactTable extends StatelessWidget {
@@ -131,7 +132,8 @@ class ContactTable extends StatelessWidget {
                     buildDefaultDragHandles: !isFilteringActive,
                     onReorderItem: (oldIndex, newIndex) {
                       if (isFilteringActive) {
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        showCurrentSnackBar(
+                          context,
                           SnackBar(
                             content: Text(
                               l10n.reorderingDisabledWhileFiltering,

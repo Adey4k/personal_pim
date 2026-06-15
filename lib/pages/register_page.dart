@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/locale_provider.dart';
+import '../utils/snackbar_utils.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -36,7 +37,8 @@ class _RegisterPageState extends State<RegisterPage> {
   void _showSnackBar(String message, {bool isError = true}) {
     if (!mounted) return;
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      showCurrentSnackBar(
+        context,
         SnackBar(
           content: Text(message),
           backgroundColor: isError ? Colors.red : Colors.green,

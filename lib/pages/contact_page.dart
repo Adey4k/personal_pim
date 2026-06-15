@@ -11,6 +11,7 @@ import '../services/firestore_service.dart';
 import '../utils/constants.dart';
 import '../utils/group_style.dart';
 import '../utils/showcase_utils.dart';
+import '../utils/snackbar_utils.dart';
 import '../utils/validators.dart';
 import '../widgets/contact/dynamic_field_widget.dart';
 import '../widgets/contact/intelligent_input_sheet.dart';
@@ -281,7 +282,8 @@ class _ContactPageState extends State<ContactPage> {
 
       if (!hasUsefulData) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
+        showCurrentSnackBar(
+          context,
           SnackBar(
             content: Text(l10n.failedToRecognizeAi),
             backgroundColor: Colors.orange,
@@ -290,7 +292,8 @@ class _ContactPageState extends State<ContactPage> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      showCurrentSnackBar(
+        context,
         SnackBar(
           content: Text('${l10n.recognitionError}: $e'),
           backgroundColor: Colors.red,
@@ -329,7 +332,8 @@ class _ContactPageState extends State<ContactPage> {
                     debugPrint('STT Error: $error');
                     if (!mounted) return;
                     setModalState(() => isListening = false);
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    showCurrentSnackBar(
+                      context,
                       SnackBar(
                         content: Text('${l10n.error}: ${error.errorMsg}'),
                         backgroundColor: Colors.red,
@@ -365,7 +369,8 @@ class _ContactPageState extends State<ContactPage> {
                 } else {
                   if (!mounted) return;
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    showCurrentSnackBar(
+                      context,
                       SnackBar(
                         content: Text(l10n.recognitionError),
                         backgroundColor: Colors.red,
@@ -376,7 +381,8 @@ class _ContactPageState extends State<ContactPage> {
               } catch (e) {
                 if (!mounted) return;
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  showCurrentSnackBar(
+                    context,
                     SnackBar(
                       content: Text('${l10n.error}: $e'),
                       backgroundColor: Colors.red,
@@ -488,7 +494,8 @@ class _ContactPageState extends State<ContactPage> {
                   });
                   Navigator.pop(context);
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  showCurrentSnackBar(
+                    context,
                     SnackBar(
                       content: Text('${l10n.error}: $error'),
                       backgroundColor: Colors.red,
@@ -627,7 +634,8 @@ class _ContactPageState extends State<ContactPage> {
       } catch (e) {
         if (!mounted) return;
         setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
+        showCurrentSnackBar(
+          context,
           SnackBar(
             content: Text('${l10n.error}: $e'),
             backgroundColor: Colors.red,
@@ -644,9 +652,7 @@ class _ContactPageState extends State<ContactPage> {
       _fields[index].dispose();
       _fields.removeAt(index);
     });
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(l10n.fieldDeleted)));
+    showCurrentSnackBar(context, SnackBar(content: Text(l10n.fieldDeleted)));
   }
 
   Future<void> _confirmDeleteContact() async {
@@ -684,13 +690,15 @@ class _ContactPageState extends State<ContactPage> {
         }
         if (!mounted) return;
         Navigator.pop(context);
-        ScaffoldMessenger.of(
+        showCurrentSnackBar(
           context,
-        ).showSnackBar(SnackBar(content: Text(l10n.contactDeleted)));
+          SnackBar(content: Text(l10n.contactDeleted)),
+        );
       } catch (e) {
         if (!mounted) return;
         setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
+        showCurrentSnackBar(
+          context,
           SnackBar(
             content: Text('${l10n.error}: $e'),
             backgroundColor: Colors.red,
@@ -751,9 +759,10 @@ class _ContactPageState extends State<ContactPage> {
                 Clipboard.setData(
                   ClipboardData(text: _fields[index].valueController.text),
                 );
-                ScaffoldMessenger.of(
+                showCurrentSnackBar(
                   context,
-                ).showSnackBar(SnackBar(content: Text(l10n.valueCopied)));
+                  SnackBar(content: Text(l10n.valueCopied)),
+                );
               },
             ),
             if (!isCoreField)
@@ -822,7 +831,8 @@ class _ContactPageState extends State<ContactPage> {
       widget.contact?.name,
     );
     if (nameError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      showCurrentSnackBar(
+        context,
         SnackBar(
           content: Text('${l10n.error}: $nameError'),
           backgroundColor: Colors.red,
@@ -873,7 +883,8 @@ class _ContactPageState extends State<ContactPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSaving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
+      showCurrentSnackBar(
+        context,
         SnackBar(
           content: Text('${l10n.error}: $e'),
           backgroundColor: Colors.red,
@@ -933,9 +944,10 @@ class _ContactPageState extends State<ContactPage> {
                     field.isAiGenerated = false;
                   });
                   setBottomSheetState(() {});
-                  ScaffoldMessenger.of(
+                  showCurrentSnackBar(
                     context,
-                  ).showSnackBar(SnackBar(content: Text(l10n.groupDeleted)));
+                    SnackBar(content: Text(l10n.groupDeleted)),
+                  );
                   final dbService = Provider.of<FirestoreService>(
                     context,
                     listen: false,
@@ -960,7 +972,8 @@ class _ContactPageState extends State<ContactPage> {
               }
               if (newName.contains(',')) {
                 if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
+                showCurrentSnackBar(
+                  context,
                   SnackBar(
                     content: Text(l10n.groupNameNoCommas),
                     backgroundColor: Colors.red,
@@ -1011,7 +1024,8 @@ class _ContactPageState extends State<ContactPage> {
           String newGroup = val.trim();
           if (newGroup.isEmpty) return;
           if (newGroup.contains(',')) {
-            ScaffoldMessenger.of(context).showSnackBar(
+            showCurrentSnackBar(
+              context,
               SnackBar(
                 content: Text(l10n.groupNameNoCommas),
                 backgroundColor: Colors.red,
@@ -1021,9 +1035,10 @@ class _ContactPageState extends State<ContactPage> {
           }
           if (!_availableGroups.contains(newGroup) &&
               _availableGroups.length >= maxGroupCount) {
-            ScaffoldMessenger.of(
+            showCurrentSnackBar(
               context,
-            ).showSnackBar(SnackBar(content: Text(l10n.maxGroups)));
+              SnackBar(content: Text(l10n.maxGroups)),
+            );
             return;
           }
           setState(() {
@@ -1044,9 +1059,10 @@ class _ContactPageState extends State<ContactPage> {
               if (_selectedGroups.length < maxGroupCount) {
                 _selectedGroups.add(group);
               } else {
-                ScaffoldMessenger.of(
+                showCurrentSnackBar(
                   context,
-                ).showSnackBar(SnackBar(content: Text(l10n.maxSelectedGroups)));
+                  SnackBar(content: Text(l10n.maxSelectedGroups)),
+                );
               }
             } else {
               _selectedGroups.remove(group);

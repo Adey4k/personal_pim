@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/locale_provider.dart';
+import '../utils/snackbar_utils.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -28,7 +29,8 @@ class _LoginPageState extends State<LoginPage> {
 
   void _showSnackBar(String message, {bool isError = true}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    showCurrentSnackBar(
+      context,
       SnackBar(
         content: Text(message),
         backgroundColor: isError ? Colors.red : Colors.green,
@@ -42,18 +44,30 @@ class _LoginPageState extends State<LoginPage> {
     }
     final message = e.toString().replaceAll('Exception: ', '');
     switch (message) {
-      case 'invalidEmail': return l10n.invalidEmail;
-      case 'userNotFound': return l10n.userNotFound;
-      case 'wrongPassword': return l10n.wrongPassword;
-      case 'invalidCredential': return l10n.invalidCredential;
-      case 'tooManyRequests': return l10n.tooManyRequests;
-      case 'userDisabled': return l10n.userDisabled;
-      case 'authError': return l10n.authError;
-      case 'googleClientIdNotFound': return l10n.googleClientIdNotFound;
-      case 'authGoogleError': return l10n.authGoogleError;
-      case 'unknownLoginError': return l10n.unknownLoginError;
-      case 'unknownError': return l10n.unknownError;
-      default: return message;
+      case 'invalidEmail':
+        return l10n.invalidEmail;
+      case 'userNotFound':
+        return l10n.userNotFound;
+      case 'wrongPassword':
+        return l10n.wrongPassword;
+      case 'invalidCredential':
+        return l10n.invalidCredential;
+      case 'tooManyRequests':
+        return l10n.tooManyRequests;
+      case 'userDisabled':
+        return l10n.userDisabled;
+      case 'authError':
+        return l10n.authError;
+      case 'googleClientIdNotFound':
+        return l10n.googleClientIdNotFound;
+      case 'authGoogleError':
+        return l10n.authGoogleError;
+      case 'unknownLoginError':
+        return l10n.unknownLoginError;
+      case 'unknownError':
+        return l10n.unknownError;
+      default:
+        return message;
     }
   }
 
@@ -61,7 +75,9 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final localeProvider = Provider.of<LocaleProvider>(context);
-    final currentLocaleCode = localeProvider.locale?.languageCode ?? Localizations.localeOf(context).languageCode;
+    final currentLocaleCode =
+        localeProvider.locale?.languageCode ??
+        Localizations.localeOf(context).languageCode;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -91,7 +107,7 @@ class _LoginPageState extends State<LoginPage> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
-              
+
               // Input Fields
               TextField(
                 controller: _emailController,
@@ -115,7 +131,9 @@ class _LoginPageState extends State<LoginPage> {
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                      _isPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
                     ),
                     onPressed: () {
                       setState(() {
@@ -130,7 +148,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 obscureText: !_isPasswordVisible,
               ),
-              
+
               // Forgot Password
               Align(
                 alignment: Alignment.centerRight,
@@ -143,7 +161,10 @@ class _LoginPageState extends State<LoginPage> {
                     }
                     try {
                       await _authService.sendPasswordReset(email);
-                      _showSnackBar(l10n.passwordResetEmailSent, isError: false);
+                      _showSnackBar(
+                        l10n.passwordResetEmailSent,
+                        isError: false,
+                      );
                     } catch (e) {
                       _showSnackBar(_translateError(e, l10n));
                     }
@@ -181,11 +202,14 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 child: Text(
                   l10n.login,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Register Link
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -194,7 +218,9 @@ class _LoginPageState extends State<LoginPage> {
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (context) => const RegisterPage()),
+                        MaterialPageRoute(
+                          builder: (context) => const RegisterPage(),
+                        ),
                       );
                     },
                     child: Text(
@@ -204,7 +230,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 24),
               Row(
                 children: [
@@ -222,12 +248,16 @@ class _LoginPageState extends State<LoginPage> {
               OutlinedButton.icon(
                 onPressed: () async {
                   try {
-                    await _authService.signInWithGoogle(languageCode: currentLocaleCode);
+                    await _authService.signInWithGoogle(
+                      languageCode: currentLocaleCode,
+                    );
                   } catch (e) {
                     _showSnackBar(_translateError(e, l10n));
                   }
                 },
-                icon: const Icon(Icons.login), // Replace with Google icon if available
+                icon: const Icon(
+                  Icons.login,
+                ), // Replace with Google icon if available
                 label: Text(l10n.loginWithGoogle),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 56),
