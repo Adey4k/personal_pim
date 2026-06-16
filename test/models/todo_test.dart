@@ -13,6 +13,7 @@ void main() {
         title: 'Test Todo',
         description: 'Test Description',
         dueDate: testDate,
+        hasDueTime: true,
         isCompleted: false,
         contactId: 'c1',
         contactName: 'John Doe',
@@ -23,6 +24,7 @@ void main() {
       expect(map['title'], 'Test Todo');
       expect(map['description'], 'Test Description');
       expect(map['dueDate'], testTimestamp);
+      expect(map['hasDueTime'], true);
       expect(map['isCompleted'], false);
       expect(map['contactId'], 'c1');
       expect(map['contactName'], 'John Doe');
@@ -33,6 +35,7 @@ void main() {
         'title': 'Test Todo',
         'description': 'Test Description',
         'dueDate': testTimestamp,
+        'hasDueTime': true,
         'isCompleted': true,
         'contactId': 'c2',
         'contactName': 'Jane Smith',
@@ -44,9 +47,31 @@ void main() {
       expect(todo.title, 'Test Todo');
       expect(todo.description, 'Test Description');
       expect(todo.dueDate, testDate);
+      expect(todo.hasDueTime, true);
       expect(todo.isCompleted, true);
       expect(todo.contactId, 'c2');
       expect(todo.contactName, 'Jane Smith');
+    });
+
+    test('Todo.fromMap() should keep old date-only tasks without time', () {
+      final dateOnly = DateTime(2023, 10, 27);
+      final todo = Todo.fromMap({
+        'title': 'Date-only Todo',
+        'dueDate': Timestamp.fromDate(dateOnly),
+      }, 'date-only');
+
+      expect(todo.dueDate, dateOnly);
+      expect(todo.hasDueTime, false);
+    });
+
+    test('Todo.fromMap() should infer time for old timed timestamps', () {
+      final todo = Todo.fromMap({
+        'title': 'Timed Todo',
+        'dueDate': testTimestamp,
+      }, 'timed');
+
+      expect(todo.dueDate, testDate);
+      expect(todo.hasDueTime, true);
     });
 
     test('Todo.copyWith() should return a new object with updated values', () {
@@ -54,10 +79,12 @@ void main() {
         id: '1',
         title: 'Original Title',
         dueDate: testDate,
+        hasDueTime: true,
       );
 
       final updatedTodo = todo.copyWith(
         title: 'Updated Title',
+        hasDueTime: false,
         isCompleted: true,
       );
 
@@ -65,6 +92,7 @@ void main() {
       expect(updatedTodo.title, 'Updated Title');
       expect(updatedTodo.isCompleted, true);
       expect(updatedTodo.dueDate, testDate); // Should remain same
+      expect(updatedTodo.hasDueTime, false);
     });
   });
 }

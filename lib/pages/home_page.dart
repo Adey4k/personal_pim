@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:showcaseview/showcaseview.dart';
@@ -51,7 +53,9 @@ class _HomePageState extends State<HomePage> {
       context,
       listen: false,
     ).getContactsStream();
-    NotificationService().requestPermissions();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(NotificationService().requestPermissions());
+    });
   }
 
   Future<void> _startTutorialIfNeeded() async {

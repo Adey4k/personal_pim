@@ -1000,6 +1000,18 @@ abstract class AppLocalizations {
   /// **'Due Date'**
   String get dueDate;
 
+  /// No description provided for @dueTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Due Time'**
+  String get dueTime;
+
+  /// No description provided for @noDueTime.
+  ///
+  /// In en, this message translates to:
+  /// **'No specific time'**
+  String get noDueTime;
+
   /// No description provided for @priority.
   ///
   /// In en, this message translates to:

@@ -183,6 +183,8 @@
   "todoTitle": "Title",
   "todoDescription": "Description",
   "dueDate": "Due Date",
+  "dueTime": "Due Time",
+  "noDueTime": "No specific time",
   "priority": "Priority",
   "low": "Low",
   "medium": "Medium",

@@ -471,6 +471,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dueDate => 'Due Date';
 
   @override
+  String get dueTime => 'Due Time';
+
+  @override
+  String get noDueTime => 'No specific time';
+
+  @override
   String get priority => 'Priority';
 
   @override

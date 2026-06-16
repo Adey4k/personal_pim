@@ -146,6 +146,8 @@
   "todoTitle": "Título",
   "todoDescription": "Descripción",
   "dueDate": "Fecha de vencimiento",
+  "dueTime": "Hora de vencimiento",
+  "noDueTime": "Sin hora específica",
   "priority": "Prioridad",
   "low": "Baja",
   "medium": "Media",

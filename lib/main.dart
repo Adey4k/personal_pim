@@ -25,53 +25,220 @@ import 'services/speech_service.dart';
 import 'pages/contact_page.dart';
 import 'l10n/app_localizations.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+void main() {
+  runZonedGuarded(() {
+    WidgetsFlutterBinding.ensureInitialized();
+    runApp(const AppBootstrap());
+  }, (error, stack) => debugPrint('Unhandled app error: $error\n$stack'));
+}
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+bool _googleSignInInitialized = false;
 
-  GoogleSignIn.instance.initialize(
-    serverClientId: Env.googleClientId,
-  );
+Future<_AppDependencies> _initializeApp() async {
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
 
-  FirebaseFirestore.instance.settings = const Settings(
-    persistenceEnabled: true,
-    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-  );
+  await _tryStartupStep('Google Sign-In initialization', () async {
+    if (_googleSignInInitialized) return;
+
+    await GoogleSignIn.instance.initialize(serverClientId: Env.googleClientId);
+    _googleSignInInitialized = true;
+  });
+
+  await _tryStartupStep('Firestore settings', () async {
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
+      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+    );
+  });
 
   final localeProvider = LocaleProvider();
-  await localeProvider.loadLocale(WidgetsBinding.instance.platformDispatcher.locale);
+  await _tryStartupStep('Locale initialization', () {
+    return localeProvider.loadLocale(
+      WidgetsBinding.instance.platformDispatcher.locale,
+    );
+  });
 
   final themeProvider = ThemeProvider();
-  await themeProvider.init();
+  await _tryStartupStep('Theme initialization', themeProvider.init);
 
-  await NotificationService().init();
+  await _tryStartupStep('Notification service initialization', () {
+    return NotificationService().init().timeout(const Duration(seconds: 5));
+  });
 
   final notificationProvider = NotificationProvider();
-  await notificationProvider.init();
+  await _tryStartupStep(
+    'Notification settings initialization',
+    notificationProvider.init,
+  );
 
   final tutorialProvider = TutorialProvider();
-  await tutorialProvider.init();
+  await _tryStartupStep('Tutorial initialization', tutorialProvider.init);
 
-  HomeWidget.registerInteractivityCallback(interactiveCallback);
+  await _tryStartupStep('Home widget callback registration', () {
+    return HomeWidget.registerInteractivityCallback(interactiveCallback);
+  });
 
-  runApp(
-    MultiProvider(
+  return _AppDependencies(
+    localeProvider: localeProvider,
+    themeProvider: themeProvider,
+    notificationProvider: notificationProvider,
+    tutorialProvider: tutorialProvider,
+  );
+}
+
+Future<void> _tryStartupStep(
+  String label,
+  Future<void> Function() action,
+) async {
+  try {
+    await action();
+  } catch (error, stack) {
+    debugPrint('$label failed: $error\n$stack');
+  }
+}
+
+class _AppDependencies {
+  final LocaleProvider localeProvider;
+  final ThemeProvider themeProvider;
+  final NotificationProvider notificationProvider;
+  final TutorialProvider tutorialProvider;
+
+  const _AppDependencies({
+    required this.localeProvider,
+    required this.themeProvider,
+    required this.notificationProvider,
+    required this.tutorialProvider,
+  });
+}
+
+class AppBootstrap extends StatefulWidget {
+  const AppBootstrap({super.key});
+
+  @override
+  State<AppBootstrap> createState() => _AppBootstrapState();
+}
+
+class _AppBootstrapState extends State<AppBootstrap> {
+  late Future<_AppDependencies> _dependenciesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _dependenciesFuture = _initializeApp();
+  }
+
+  void _retry() {
+    setState(() {
+      _dependenciesFuture = _initializeApp();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<_AppDependencies>(
+      future: _dependenciesFuture,
+      builder: (context, snapshot) {
+        final dependencies = snapshot.data;
+        if (dependencies != null) {
+          return _AppProviders(
+            dependencies: dependencies,
+            child: const MyApp(),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return _StartupErrorApp(onRetry: _retry);
+        }
+
+        return const _StartupLoadingApp();
+      },
+    );
+  }
+}
+
+class _AppProviders extends StatelessWidget {
+  final _AppDependencies dependencies;
+  final Widget child;
+
+  const _AppProviders({required this.dependencies, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
       providers: [
-        ChangeNotifierProvider.value(value: localeProvider),
-        ChangeNotifierProvider.value(value: themeProvider),
-        ChangeNotifierProvider.value(value: notificationProvider),
-        ChangeNotifierProvider.value(value: tutorialProvider),
+        ChangeNotifierProvider.value(value: dependencies.localeProvider),
+        ChangeNotifierProvider.value(value: dependencies.themeProvider),
+        ChangeNotifierProvider.value(value: dependencies.notificationProvider),
+        ChangeNotifierProvider.value(value: dependencies.tutorialProvider),
         ChangeNotifierProvider(create: (context) => ContactsProvider()),
         Provider<FirestoreService>(create: (context) => FirestoreService()),
         Provider<GeminiService>(create: (context) => GeminiService()),
         Provider<SpeechService>(create: (context) => SpeechService()),
       ],
-      child: const MyApp(),
-    ),
-  );
+      child: child,
+    );
+  }
+}
+
+class _StartupLoadingApp extends StatelessWidget {
+  const _StartupLoadingApp();
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: Colors.green.shade700),
+        ),
+      ),
+    );
+  }
+}
+
+class _StartupErrorApp extends StatelessWidget {
+  final VoidCallback onRetry;
+
+  const _StartupErrorApp({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, size: 48),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Unable to start Mnemo PIM',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Check your connection and try again.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton(onPressed: onRetry, child: const Text('Retry')),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 @pragma('vm:entry-point')
@@ -89,41 +256,41 @@ class MyApp extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     return MaterialApp(
-        onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: themeProvider.seedColor,
-            brightness: Brightness.light,
-          ),
-          useMaterial3: true,
+      onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: themeProvider.seedColor,
+          brightness: Brightness.light,
         ),
-        darkTheme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: themeProvider.seedColor,
-            brightness: Brightness.dark,
-            surface: const Color(0xFF1A1C1E),
-          ),
-          scaffoldBackgroundColor: const Color(0xFF1A1C1E),
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: themeProvider.seedColor,
+          brightness: Brightness.dark,
+          surface: const Color(0xFF1A1C1E),
         ),
-        themeMode: themeProvider.themeMode,
-        locale: localeProvider.locale,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        builder: (context, child) {
-          final mediaQueryData = MediaQuery.of(context);
-          return MediaQuery(
-            data: mediaQueryData.copyWith(
-              textScaler: mediaQueryData.textScaler.clamp(
-                minScaleFactor: 0.8,
-                maxScaleFactor: 1.1,
-              ),
+        scaffoldBackgroundColor: const Color(0xFF1A1C1E),
+      ),
+      themeMode: themeProvider.themeMode,
+      locale: localeProvider.locale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      builder: (context, child) {
+        final mediaQueryData = MediaQuery.of(context);
+        return MediaQuery(
+          data: mediaQueryData.copyWith(
+            textScaler: mediaQueryData.textScaler.clamp(
+              minScaleFactor: 0.8,
+              maxScaleFactor: 1.1,
             ),
-            child: child!,
-          );
-        },
-        home: const AppRoot(),
-      );
+          ),
+          child: child!,
+        );
+      },
+      home: const AppRoot(),
+    );
   }
 }
 
@@ -136,8 +303,11 @@ class AppRoot extends StatelessWidget {
       stream: FirebaseAuth.instance.userChanges(),
       initialData: FirebaseAuth.instance.currentUser,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
         if (snapshot.hasData) {
           final user = snapshot.data!;
@@ -197,8 +367,10 @@ class _AppNavigationHandlerState extends State<AppNavigationHandler>
 
   void _startContactReminderSync() {
     final firestore = Provider.of<FirestoreService>(context, listen: false);
-    final notificationProvider =
-        Provider.of<NotificationProvider>(context, listen: false);
+    final notificationProvider = Provider.of<NotificationProvider>(
+      context,
+      listen: false,
+    );
 
     _contactReminderSubscription = firestore.getContactsStream().listen(
       (contacts) {

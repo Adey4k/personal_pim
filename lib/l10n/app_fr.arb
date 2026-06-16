@@ -146,6 +146,8 @@
   "todoTitle": "Titre",
   "todoDescription": "Description",
   "dueDate": "Date d'échéance",
+  "dueTime": "Heure d'échéance",
+  "noDueTime": "Aucune heure précise",
   "priority": "Priorité",
   "low": "Basse",
   "medium": "Moyenne",

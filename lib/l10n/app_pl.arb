@@ -146,6 +146,8 @@
   "todoTitle": "Tytuł",
   "todoDescription": "Opis",
   "dueDate": "Termin wykonania",
+  "dueTime": "Godzina wykonania",
+  "noDueTime": "Bez konkretnej godziny",
   "priority": "Priorytet",
   "low": "Niski",
   "medium": "Średni",

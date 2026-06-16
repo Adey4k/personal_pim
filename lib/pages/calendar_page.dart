@@ -548,6 +548,8 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   Widget _buildTodoTile(Todo todo) {
+    final localeName = Localizations.localeOf(context).toString();
+
     return Card(
       elevation: 0,
       color: Theme.of(context).colorScheme.surface,
@@ -574,6 +576,29 @@ class _CalendarPageState extends State<CalendarPage> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (todo.hasDueTime)
+              Padding(
+                padding: const EdgeInsets.only(top: 4.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.access_time,
+                      size: 14,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      DateFormat.jm(localeName).format(todo.dueDate),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             if (todo.description.isNotEmpty) Text(todo.description),
             if (todo.contactName != null)
               Padding(

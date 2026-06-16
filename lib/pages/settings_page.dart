@@ -28,6 +28,9 @@ class SettingsPage extends StatelessWidget {
     final notificationProvider = Provider.of<NotificationProvider>(context);
     final currentLocale =
         localeProvider.locale ?? Localizations.localeOf(context);
+    final currentUser = AuthService().currentUser;
+    final userName = currentUser?.displayName?.trim() ?? '';
+    final userEmail = currentUser?.email?.trim() ?? '';
 
     final platformBrightness = MediaQuery.platformBrightnessOf(context);
 
@@ -180,12 +183,24 @@ class SettingsPage extends StatelessWidget {
           const Divider(),
 
           ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: Text(l10n.logout, style: const TextStyle(color: Colors.red)),
-            onTap: () async {
-              final authService = AuthService();
-              await authService.signOut();
-            },
+            leading: const Icon(Icons.account_circle),
+            title: Text(
+              userName.isEmpty ? l10n.noName : userName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: userEmail.isEmpty
+                ? null
+                : Text(userEmail, maxLines: 1, overflow: TextOverflow.ellipsis),
+            trailing: TextButton.icon(
+              icon: const Icon(Icons.logout),
+              label: Text(l10n.logout),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              onPressed: () async {
+                final authService = AuthService();
+                await authService.signOut();
+              },
+            ),
           ),
 
           const Divider(),
@@ -194,16 +209,16 @@ class SettingsPage extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 16.0),
             child: Column(
               children: [
-                Text(
-                  l10n.onboardingContactMeDesc,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.grey, fontSize: 14),
-                ),
-                const SizedBox(height: 4),
                 const Text(
-                  "Ладіков Максим, 45 група",
+                  "Виконав: Ладіков Максим, 45 група",
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey, fontSize: 14),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Зв'язок за поштою: ${l10n.onboardingContactMeDesc}",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.grey, fontSize: 14),
                 ),
               ],
             ),

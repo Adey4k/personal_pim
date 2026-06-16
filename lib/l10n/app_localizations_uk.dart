@@ -476,6 +476,12 @@ class AppLocalizationsUk extends AppLocalizations {
   String get dueDate => 'Дата виконання';
 
   @override
+  String get dueTime => 'Час виконання';
+
+  @override
+  String get noDueTime => 'Без конкретного часу';
+
+  @override
   String get priority => 'Пріоритет';
 
   @override

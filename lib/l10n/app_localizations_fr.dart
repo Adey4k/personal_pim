@@ -479,6 +479,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get dueDate => 'Date d\'échéance';
 
   @override
+  String get dueTime => 'Heure d\'échéance';
+
+  @override
+  String get noDueTime => 'Aucune heure précise';
+
+  @override
   String get priority => 'Priorité';
 
   @override

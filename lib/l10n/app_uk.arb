@@ -169,6 +169,8 @@
   "todoTitle": "Заголовок",
   "todoDescription": "Опис",
   "dueDate": "Дата виконання",
+  "dueTime": "Час виконання",
+  "noDueTime": "Без конкретного часу",
   "priority": "Пріоритет",
   "low": "Низький",
   "medium": "Середній",

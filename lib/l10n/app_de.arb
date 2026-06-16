@@ -146,6 +146,8 @@
   "todoTitle": "Titel",
   "todoDescription": "Beschreibung",
   "dueDate": "Fälligkeitsdatum",
+  "dueTime": "Fälligkeitszeit",
+  "noDueTime": "Keine bestimmte Uhrzeit",
   "priority": "Priorität",
   "low": "Niedrig",
   "medium": "Mittel",

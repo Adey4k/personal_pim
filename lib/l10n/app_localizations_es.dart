@@ -480,6 +480,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get dueDate => 'Fecha de vencimiento';
 
   @override
+  String get dueTime => 'Hora de vencimiento';
+
+  @override
+  String get noDueTime => 'Sin hora específica';
+
+  @override
   String get priority => 'Prioridad';
 
   @override

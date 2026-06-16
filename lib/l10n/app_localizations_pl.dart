@@ -477,6 +477,12 @@ class AppLocalizationsPl extends AppLocalizations {
   String get dueDate => 'Termin wykonania';
 
   @override
+  String get dueTime => 'Godzina wykonania';
+
+  @override
+  String get noDueTime => 'Bez konkretnej godziny';
+
+  @override
   String get priority => 'Priorytet';
 
   @override
