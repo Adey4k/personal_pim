@@ -248,6 +248,7 @@ class _HomePageState extends State<HomePage> {
             title: l10n.onboardingAddContactTitle,
             description: l10n.onboardingAddContactDesc,
             child: FloatingActionButton(
+              heroTag: 'home_add_contact_fab',
               backgroundColor: Theme.of(context).colorScheme.inversePrimary,
               foregroundColor: Theme.of(context).colorScheme.onSurface,
               onPressed: () async {

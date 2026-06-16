@@ -12,15 +12,21 @@ class NotificationProvider extends ChangeNotifier {
   final NotificationService _notificationService = NotificationService();
   final DateTime Function() _now;
   List<Contact> _lastContactReminderSnapshot = const [];
+  bool _catchUpOnNextContactReminderSync = false;
 
   static const String _timeHourKey = 'reminder_hour';
   static const String _timeMinuteKey = 'reminder_minute';
   static const String _contactReminderIdsKey =
       'contact_reminder_notification_ids';
+  static const String _contactReminderCatchUpKeysKey =
+      'contact_reminder_catch_up_keys';
   static const int _dailyReminderId = 0;
   static const int _testNotificationId = 999;
   static const int _contactReminderIdStart = 10000;
+  static const int _contactReminderCatchUpIdStart = 20000;
   static const int _maxContactReminderNotifications = 500;
+  static const int _maxContactReminderCatchUpNotifications = 10;
+  static const int _maxStoredContactReminderCatchUpKeys = 500;
 
   TimeOfDay get reminderTime => _reminderTime;
 
@@ -51,12 +57,26 @@ class NotificationProvider extends ChangeNotifier {
 
     await _cancelUnconfiguredNotifications();
     if (_lastContactReminderSnapshot.isNotEmpty) {
-      await scheduleContactEventNotifications(_lastContactReminderSnapshot);
+      await scheduleContactEventNotifications(
+        _lastContactReminderSnapshot,
+        allowCatchUp: true,
+      );
+    } else {
+      _catchUpOnNextContactReminderSync = true;
     }
   }
 
-  Future<void> scheduleContactEventNotifications(List<Contact> contacts) async {
+  Future<void> scheduleContactEventNotifications(
+    List<Contact> contacts, {
+    bool allowCatchUp = false,
+  }) async {
     _lastContactReminderSnapshot = List<Contact>.unmodifiable(contacts);
+    final shouldAllowCatchUp =
+        allowCatchUp ||
+        (_catchUpOnNextContactReminderSync && contacts.isNotEmpty);
+    if (shouldAllowCatchUp) {
+      _catchUpOnNextContactReminderSync = false;
+    }
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -66,6 +86,9 @@ class NotificationProvider extends ChangeNotifier {
       final l10n = await AppLocalizations.delegate.load(Locale(lang));
       await initializeDateFormatting(lang);
       final schedules = _buildContactReminderSchedules(contacts, l10n, lang);
+      final catchUpSchedules = shouldAllowCatchUp
+          ? _buildContactReminderCatchUpSchedules(contacts, l10n, lang)
+          : const <_ContactReminderSchedule>[];
       final scheduledIds = <String>[];
 
       for (
@@ -91,6 +114,7 @@ class NotificationProvider extends ChangeNotifier {
       }
 
       await prefs.setStringList(_contactReminderIdsKey, scheduledIds);
+      await _showContactReminderCatchUps(prefs, catchUpSchedules);
     } catch (e) {
       debugPrint('Error scheduling contact event notifications: $e');
     }
@@ -109,6 +133,51 @@ class NotificationProvider extends ChangeNotifier {
     }
 
     await prefs.remove(_contactReminderIdsKey);
+  }
+
+  Future<void> _showContactReminderCatchUps(
+    SharedPreferences prefs,
+    List<_ContactReminderSchedule> schedules,
+  ) async {
+    if (schedules.isEmpty) return;
+
+    final storedKeys = prefs.getStringList(_contactReminderCatchUpKeysKey);
+    final shownKeys = List<String>.from(storedKeys ?? const <String>[]);
+    final shownKeySet = shownKeys.toSet();
+    var shownCount = 0;
+
+    for (final schedule in schedules) {
+      if (shownCount >= _maxContactReminderCatchUpNotifications) break;
+      if (shownKeySet.contains(schedule.catchUpKey)) continue;
+
+      final id =
+          _contactReminderCatchUpIdStart +
+          (shownKeys.length % _maxContactReminderNotifications);
+
+      try {
+        await _notificationService.showContactReminderNow(
+          id: id,
+          title: schedule.title,
+          body: schedule.body,
+        );
+        shownKeys.add(schedule.catchUpKey);
+        shownKeySet.add(schedule.catchUpKey);
+        shownCount++;
+      } catch (e) {
+        debugPrint('Error showing contact reminder catch-up "$id": $e');
+      }
+    }
+
+    if (shownCount == 0) return;
+
+    if (shownKeys.length > _maxStoredContactReminderCatchUpKeys) {
+      shownKeys.removeRange(
+        0,
+        shownKeys.length - _maxStoredContactReminderCatchUpKeys,
+      );
+    }
+
+    await prefs.setStringList(_contactReminderCatchUpKeysKey, shownKeys);
   }
 
   List<_ContactReminderSchedule> _buildContactReminderSchedules(
@@ -131,25 +200,15 @@ class NotificationProvider extends ChangeNotifier {
 
           if (occurrence == null) continue;
 
-          final fieldLabel = field.key == AppKeys.birthday
-              ? l10n.birthdayEvent
-              : AppKeys.getLocalizedLabel(field.key, l10n);
-          final isBirthday = field.key == AppKeys.birthday;
           schedules.add(
-            _ContactReminderSchedule(
-              title: '$fieldLabel - ${contact.name}',
-              body: _buildReminderBody(
-                contactName: contact.name,
-                fieldLabel: fieldLabel,
-                eventDate: occurrence.eventDate,
-                scheduledDate: occurrence.scheduledDate,
-                originalYear: dateField.year,
-                repeatsYearly: dateField.remindYearly,
-                isBirthday: isBirthday,
-                localeName: localeName,
-              ),
-              scheduledDate: occurrence.scheduledDate,
-              repeatsYearly: occurrence.repeatsYearly,
+            _buildContactReminderSchedule(
+              contact: contact,
+              fieldKey: field.key,
+              dateField: dateField,
+              reminderKey: reminderKey,
+              occurrence: occurrence,
+              l10n: l10n,
+              localeName: localeName,
             ),
           );
         }
@@ -158,6 +217,83 @@ class NotificationProvider extends ChangeNotifier {
 
     schedules.sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
     return schedules;
+  }
+
+  List<_ContactReminderSchedule> _buildContactReminderCatchUpSchedules(
+    List<Contact> contacts,
+    AppLocalizations l10n,
+    String localeName,
+  ) {
+    final now = _now();
+    final schedules = <_ContactReminderSchedule>[];
+
+    for (final contact in contacts) {
+      for (final field in contact.fields.entries) {
+        final dateField = _parseContactDateField(field.key, field.value);
+        if (dateField == null || dateField.remindBefore.isEmpty) continue;
+
+        for (final reminderKey in dateField.remindBefore.toSet()) {
+          final occurrence = dateField.remindYearly
+              ? _sameDayYearlyCatchUpOccurrence(dateField, reminderKey, now)
+              : _sameDayOneTimeCatchUpOccurrence(dateField, reminderKey, now);
+
+          if (occurrence == null) continue;
+
+          schedules.add(
+            _buildContactReminderSchedule(
+              contact: contact,
+              fieldKey: field.key,
+              dateField: dateField,
+              reminderKey: reminderKey,
+              occurrence: occurrence,
+              l10n: l10n,
+              localeName: localeName,
+            ),
+          );
+        }
+      }
+    }
+
+    schedules.sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
+    return schedules;
+  }
+
+  _ContactReminderSchedule _buildContactReminderSchedule({
+    required Contact contact,
+    required String fieldKey,
+    required _ContactDateField dateField,
+    required String reminderKey,
+    required _ReminderOccurrence occurrence,
+    required AppLocalizations l10n,
+    required String localeName,
+  }) {
+    final fieldLabel = fieldKey == AppKeys.birthday
+        ? l10n.birthdayEvent
+        : AppKeys.getLocalizedLabel(fieldKey, l10n);
+    final isBirthday = fieldKey == AppKeys.birthday;
+
+    return _ContactReminderSchedule(
+      title: '$fieldLabel - ${contact.name}',
+      body: _buildReminderBody(
+        contactName: contact.name,
+        fieldLabel: fieldLabel,
+        eventDate: occurrence.eventDate,
+        scheduledDate: occurrence.scheduledDate,
+        originalYear: dateField.year,
+        repeatsYearly: dateField.remindYearly,
+        isBirthday: isBirthday,
+        localeName: localeName,
+      ),
+      scheduledDate: occurrence.scheduledDate,
+      repeatsYearly: occurrence.repeatsYearly,
+      catchUpKey: _contactReminderCatchUpKey(
+        contact: contact,
+        fieldKey: fieldKey,
+        dateField: dateField,
+        reminderKey: reminderKey,
+        occurrence: occurrence,
+      ),
+    );
   }
 
   Future<void> _cancelUnconfiguredNotifications() async {
@@ -487,6 +623,46 @@ class NotificationProvider extends ChangeNotifier {
     return DateTime(date.year, date.month, date.day);
   }
 
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  String _dateKey(DateTime date) {
+    final year = date.year.toString().padLeft(4, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
+  }
+
+  String _keyPart(Object? value) {
+    return Uri.encodeComponent(value?.toString() ?? '');
+  }
+
+  String _contactReminderCatchUpKey({
+    required Contact contact,
+    required String fieldKey,
+    required _ContactDateField dateField,
+    required String reminderKey,
+    required _ReminderOccurrence occurrence,
+  }) {
+    final contactKey = contact.id?.isNotEmpty == true
+        ? contact.id!
+        : contact.name;
+
+    return [
+      'v1',
+      _keyPart(contactKey),
+      _keyPart(fieldKey),
+      dateField.year.toString(),
+      dateField.month.toString(),
+      dateField.day.toString(),
+      dateField.remindYearly ? 'yearly' : 'once',
+      _keyPart(reminderKey),
+      _dateKey(occurrence.scheduledDate),
+      _dateKey(occurrence.eventDate),
+    ].join('|');
+  }
+
   _ContactDateField? _parseContactDateField(String key, dynamic value) {
     String dateText = '';
     bool remindYearly = key == AppKeys.birthday;
@@ -618,6 +794,63 @@ class NotificationProvider extends ChangeNotifier {
     return null;
   }
 
+  _ReminderOccurrence? _sameDayOneTimeCatchUpOccurrence(
+    _ContactDateField field,
+    String reminderKey,
+    DateTime now,
+  ) {
+    if (field.year == 0) return null;
+
+    final eventDate = _dateWithClampedDay(field.year, field.month, field.day);
+    final reminderDate = _applyReminderOffset(eventDate, reminderKey);
+    final scheduledDate = DateTime(
+      reminderDate.year,
+      reminderDate.month,
+      reminderDate.day,
+      _reminderTime.hour,
+      _reminderTime.minute,
+    );
+
+    if (scheduledDate.isAfter(now) || !_isSameDay(scheduledDate, now)) {
+      return null;
+    }
+
+    return _ReminderOccurrence(
+      scheduledDate: scheduledDate,
+      eventDate: eventDate,
+      repeatsYearly: false,
+    );
+  }
+
+  _ReminderOccurrence? _sameDayYearlyCatchUpOccurrence(
+    _ContactDateField field,
+    String reminderKey,
+    DateTime now,
+  ) {
+    for (var year = now.year; year <= now.year + 5; year++) {
+      final eventDate = _dateWithClampedDay(year, field.month, field.day);
+      final reminderDate = _applyReminderOffset(eventDate, reminderKey);
+      final scheduledDate = DateTime(
+        reminderDate.year,
+        reminderDate.month,
+        reminderDate.day,
+        _reminderTime.hour,
+        _reminderTime.minute,
+      );
+
+      if (!_isSameDay(scheduledDate, now)) continue;
+      if (scheduledDate.isAfter(now)) return null;
+
+      return _ReminderOccurrence(
+        scheduledDate: scheduledDate,
+        eventDate: eventDate,
+        repeatsYearly: true,
+      );
+    }
+
+    return null;
+  }
+
   DateTime _applyReminderOffset(DateTime eventDate, String reminderKey) {
     switch (reminderKey) {
       case 'halfYear':
@@ -702,11 +935,13 @@ class _ContactReminderSchedule {
   final String body;
   final DateTime scheduledDate;
   final bool repeatsYearly;
+  final String catchUpKey;
 
   const _ContactReminderSchedule({
     required this.title,
     required this.body,
     required this.scheduledDate,
     required this.repeatsYearly,
+    required this.catchUpKey,
   });
 }

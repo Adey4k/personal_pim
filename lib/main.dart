@@ -154,7 +154,7 @@ class _AppBootstrapState extends State<AppBootstrap> {
           return _StartupErrorApp(onRetry: _retry);
         }
 
-        return const _StartupLoadingApp();
+        return const SizedBox.shrink();
       },
     );
   }
@@ -180,22 +180,6 @@ class _AppProviders extends StatelessWidget {
         Provider<SpeechService>(create: (context) => SpeechService()),
       ],
       child: child,
-    );
-  }
-}
-
-class _StartupLoadingApp extends StatelessWidget {
-  const _StartupLoadingApp();
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(color: Colors.green.shade700),
-        ),
-      ),
     );
   }
 }
@@ -303,12 +287,6 @@ class AppRoot extends StatelessWidget {
       stream: FirebaseAuth.instance.userChanges(),
       initialData: FirebaseAuth.instance.currentUser,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            !snapshot.hasData) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
         if (snapshot.hasData) {
           final user = snapshot.data!;
           if (user.emailVerified) {

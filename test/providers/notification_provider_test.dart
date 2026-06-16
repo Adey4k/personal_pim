@@ -240,6 +240,157 @@ void main() {
           yearlyArgs['matchDateTimeComponents'],
           DateTimeComponents.dateAndTime.index,
         );
+        expect(
+          notificationCalls.where((call) => call.method == 'show'),
+          isEmpty,
+        );
+      },
+    );
+
+    test(
+      'changing reminder time catches up a missed same-day reminder once',
+      () async {
+        notificationProvider = NotificationProvider(
+          now: () => DateTime(2098, 6, 14, 10, 30),
+        );
+        final contacts = [
+          Contact(
+            id: 'contact-1',
+            fields: {
+              AppKeys.name: 'Alex',
+              AppKeys.birthday: {
+                'date': '14.06.1990',
+                'remindYearly': true,
+                'remindBefore': ['today'],
+              },
+            },
+          ),
+        ];
+
+        await notificationProvider.scheduleContactEventNotifications(contacts);
+        notificationCalls.clear();
+
+        await notificationProvider.setReminderTime(
+          const TimeOfDay(hour: 10, minute: 0),
+        );
+
+        final showCalls = notificationCalls
+            .where((call) => call.method == 'show')
+            .toList();
+        expect(showCalls, hasLength(1));
+
+        final showArgs = showCalls.single.arguments as Map<dynamic, dynamic>;
+        expect(showArgs['title'], 'Birthday - Alex');
+        expect(showArgs['body'], "Today is Alex's birthday. Alex turns 108.");
+
+        final scheduleCalls = notificationCalls
+            .where((call) => call.method == 'zonedSchedule')
+            .toList();
+        expect(scheduleCalls, hasLength(1));
+        final scheduleArgs =
+            scheduleCalls.single.arguments as Map<dynamic, dynamic>;
+        expect(scheduleArgs['scheduledDateTime'], startsWith('2099-06-14T'));
+
+        notificationCalls.clear();
+
+        await notificationProvider.setReminderTime(
+          const TimeOfDay(hour: 9, minute: 45),
+        );
+
+        expect(
+          notificationCalls.where((call) => call.method == 'show'),
+          isEmpty,
+        );
+      },
+    );
+
+    test('changing reminder time does not catch up stale reminders', () async {
+      notificationProvider = NotificationProvider(
+        now: () => DateTime(2098, 6, 15, 10, 30),
+      );
+      final contacts = [
+        Contact(
+          id: 'contact-1',
+          fields: {
+            AppKeys.name: 'Alex',
+            'Anniversary': {
+              'date': '14.06.2098',
+              'remindYearly': false,
+              'remindBefore': ['today'],
+            },
+          },
+        ),
+      ];
+
+      await notificationProvider.scheduleContactEventNotifications(contacts);
+      notificationCalls.clear();
+
+      await notificationProvider.setReminderTime(
+        const TimeOfDay(hour: 10, minute: 0),
+      );
+
+      expect(notificationCalls.where((call) => call.method == 'show'), isEmpty);
+      expect(
+        notificationCalls.where((call) => call.method == 'zonedSchedule'),
+        isEmpty,
+      );
+    });
+
+    test(
+      'changing reminder time catches up on the next contact sync if needed',
+      () async {
+        notificationProvider = NotificationProvider(
+          now: () => DateTime(2098, 6, 14, 10, 30),
+        );
+        final contacts = [
+          Contact(
+            id: 'contact-1',
+            fields: {
+              AppKeys.name: 'Alex',
+              AppKeys.birthday: {
+                'date': '14.06.1990',
+                'remindYearly': true,
+                'remindBefore': ['today'],
+              },
+            },
+          ),
+        ];
+
+        await notificationProvider.setReminderTime(
+          const TimeOfDay(hour: 10, minute: 0),
+        );
+
+        expect(
+          notificationCalls.where((call) => call.method == 'show'),
+          isEmpty,
+        );
+        notificationCalls.clear();
+
+        await notificationProvider.scheduleContactEventNotifications(
+          const <Contact>[],
+        );
+
+        expect(
+          notificationCalls.where((call) => call.method == 'show'),
+          isEmpty,
+        );
+        notificationCalls.clear();
+
+        await notificationProvider.scheduleContactEventNotifications(contacts);
+
+        expect(
+          notificationCalls.where((call) => call.method == 'show'),
+          hasLength(1),
+        );
+
+        notificationCalls.clear();
+
+        await notificationProvider.scheduleContactEventNotifications(contacts);
+
+        expect(
+          notificationCalls.where((call) => call.method == 'show'),
+          isEmpty,
+        );
       },
     );
   });

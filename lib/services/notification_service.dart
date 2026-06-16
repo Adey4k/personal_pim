@@ -8,6 +8,18 @@ import 'dart:io';
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   static const String _androidNotificationIcon = 'ic_notification';
+  static const NotificationDetails _contactReminderNotificationDetails =
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          'contact_reminder_channel',
+          'Contact Reminders',
+          channelDescription: 'Birthday and contact event reminders',
+          icon: _androidNotificationIcon,
+          importance: Importance.max,
+          priority: Priority.high,
+        ),
+        iOS: DarwinNotificationDetails(),
+      );
 
   factory NotificationService() => _instance;
   NotificationService._internal();
@@ -78,23 +90,26 @@ class NotificationService {
       title,
       body,
       tz.TZDateTime.from(scheduledDate, tz.local),
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'contact_reminder_channel',
-          'Contact Reminders',
-          channelDescription: 'Birthday and contact event reminders',
-          icon: _androidNotificationIcon,
-          importance: Importance.max,
-          priority: Priority.high,
-        ),
-        iOS: DarwinNotificationDetails(),
-      ),
+      _contactReminderNotificationDetails,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: repeatsYearly
           ? DateTimeComponents.dateAndTime
           : null,
+    );
+  }
+
+  Future<void> showContactReminderNow({
+    required int id,
+    required String title,
+    required String body,
+  }) async {
+    await _notificationsPlugin.show(
+      id,
+      title,
+      body,
+      _contactReminderNotificationDetails,
     );
   }
 
