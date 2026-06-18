@@ -12,12 +12,13 @@ class NotificationProvider extends ChangeNotifier {
   final NotificationService _notificationService = NotificationService();
   final DateTime Function() _now;
   List<Contact> _lastContactReminderSnapshot = const [];
-  bool _catchUpOnNextContactReminderSync = false;
 
   static const String _timeHourKey = 'reminder_hour';
   static const String _timeMinuteKey = 'reminder_minute';
   static const String _contactReminderIdsKey =
       'contact_reminder_notification_ids';
+  static const String _contactReminderScheduledOccurrenceKeysKey =
+      'contact_reminder_scheduled_occurrence_keys';
   static const String _contactReminderCatchUpKeysKey =
       'contact_reminder_catch_up_keys';
   static const int _dailyReminderId = 0;
@@ -61,35 +62,35 @@ class NotificationProvider extends ChangeNotifier {
         _lastContactReminderSnapshot,
         allowCatchUp: true,
       );
-    } else {
-      _catchUpOnNextContactReminderSync = true;
     }
   }
 
   Future<void> scheduleContactEventNotifications(
     List<Contact> contacts, {
-    bool allowCatchUp = false,
+    bool allowCatchUp = true,
   }) async {
     _lastContactReminderSnapshot = List<Contact>.unmodifiable(contacts);
-    final shouldAllowCatchUp =
-        allowCatchUp ||
-        (_catchUpOnNextContactReminderSync && contacts.isNotEmpty);
-    if (shouldAllowCatchUp) {
-      _catchUpOnNextContactReminderSync = false;
-    }
 
     try {
       final prefs = await SharedPreferences.getInstance();
+      final previouslyScheduledOccurrenceKeys =
+          _storedContactReminderScheduledOccurrenceKeys(prefs);
       await _cancelStoredContactReminderNotifications(prefs);
 
       final lang = _supportedLanguageCode(prefs.getString('selected_language'));
       final l10n = await AppLocalizations.delegate.load(Locale(lang));
       await initializeDateFormatting(lang);
       final schedules = _buildContactReminderSchedules(contacts, l10n, lang);
-      final catchUpSchedules = shouldAllowCatchUp
-          ? _buildContactReminderCatchUpSchedules(contacts, l10n, lang)
+      final catchUpSchedules = allowCatchUp
+          ? _buildContactReminderCatchUpSchedules(
+              contacts,
+              l10n,
+              lang,
+              previouslyScheduledOccurrenceKeys,
+            )
           : const <_ContactReminderSchedule>[];
       final scheduledIds = <String>[];
+      final scheduledOccurrenceKeys = <String>[];
 
       for (
         var i = 0;
@@ -108,12 +109,17 @@ class NotificationProvider extends ChangeNotifier {
             repeatsYearly: schedule.repeatsYearly,
           );
           scheduledIds.add(id.toString());
+          scheduledOccurrenceKeys.add(schedule.occurrenceKey);
         } catch (e) {
           debugPrint('Error scheduling contact reminder "$id": $e');
         }
       }
 
       await prefs.setStringList(_contactReminderIdsKey, scheduledIds);
+      await prefs.setStringList(
+        _contactReminderScheduledOccurrenceKeysKey,
+        scheduledOccurrenceKeys,
+      );
       await _showContactReminderCatchUps(prefs, catchUpSchedules);
     } catch (e) {
       debugPrint('Error scheduling contact event notifications: $e');
@@ -133,6 +139,15 @@ class NotificationProvider extends ChangeNotifier {
     }
 
     await prefs.remove(_contactReminderIdsKey);
+  }
+
+  Set<String> _storedContactReminderScheduledOccurrenceKeys(
+    SharedPreferences prefs,
+  ) {
+    final storedKeys =
+        prefs.getStringList(_contactReminderScheduledOccurrenceKeysKey) ??
+        const <String>[];
+    return storedKeys.toSet();
   }
 
   Future<void> _showContactReminderCatchUps(
@@ -223,6 +238,7 @@ class NotificationProvider extends ChangeNotifier {
     List<Contact> contacts,
     AppLocalizations l10n,
     String localeName,
+    Set<String> previouslyScheduledOccurrenceKeys,
   ) {
     final now = _now();
     final schedules = <_ContactReminderSchedule>[];
@@ -239,17 +255,23 @@ class NotificationProvider extends ChangeNotifier {
 
           if (occurrence == null) continue;
 
-          schedules.add(
-            _buildContactReminderSchedule(
-              contact: contact,
-              fieldKey: field.key,
-              dateField: dateField,
-              reminderKey: reminderKey,
-              occurrence: occurrence,
-              l10n: l10n,
-              localeName: localeName,
-            ),
+          final schedule = _buildContactReminderSchedule(
+            contact: contact,
+            fieldKey: field.key,
+            dateField: dateField,
+            reminderKey: reminderKey,
+            occurrence: occurrence,
+            l10n: l10n,
+            localeName: localeName,
           );
+
+          if (previouslyScheduledOccurrenceKeys.contains(
+            schedule.occurrenceKey,
+          )) {
+            continue;
+          }
+
+          schedules.add(schedule);
         }
       }
     }
@@ -286,6 +308,13 @@ class NotificationProvider extends ChangeNotifier {
       ),
       scheduledDate: occurrence.scheduledDate,
       repeatsYearly: occurrence.repeatsYearly,
+      occurrenceKey: _contactReminderOccurrenceKey(
+        contact: contact,
+        fieldKey: fieldKey,
+        dateField: dateField,
+        reminderKey: reminderKey,
+        occurrence: occurrence,
+      ),
       catchUpKey: _contactReminderCatchUpKey(
         contact: contact,
         fieldKey: fieldKey,
@@ -634,8 +663,39 @@ class NotificationProvider extends ChangeNotifier {
     return '$year-$month-$day';
   }
 
+  String _dateTimeKey(DateTime date) {
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '${_dateKey(date)}T$hour:$minute';
+  }
+
   String _keyPart(Object? value) {
     return Uri.encodeComponent(value?.toString() ?? '');
+  }
+
+  String _contactReminderOccurrenceKey({
+    required Contact contact,
+    required String fieldKey,
+    required _ContactDateField dateField,
+    required String reminderKey,
+    required _ReminderOccurrence occurrence,
+  }) {
+    final contactKey = contact.id?.isNotEmpty == true
+        ? contact.id!
+        : contact.name;
+
+    return [
+      'v1',
+      _keyPart(contactKey),
+      _keyPart(fieldKey),
+      dateField.year.toString(),
+      dateField.month.toString(),
+      dateField.day.toString(),
+      dateField.remindYearly ? 'yearly' : 'once',
+      _keyPart(reminderKey),
+      _dateTimeKey(occurrence.scheduledDate),
+      _dateKey(occurrence.eventDate),
+    ].join('|');
   }
 
   String _contactReminderCatchUpKey({
@@ -935,6 +995,7 @@ class _ContactReminderSchedule {
   final String body;
   final DateTime scheduledDate;
   final bool repeatsYearly;
+  final String occurrenceKey;
   final String catchUpKey;
 
   const _ContactReminderSchedule({
@@ -942,6 +1003,7 @@ class _ContactReminderSchedule {
     required this.body,
     required this.scheduledDate,
     required this.repeatsYearly,
+    required this.occurrenceKey,
     required this.catchUpKey,
   });
 }

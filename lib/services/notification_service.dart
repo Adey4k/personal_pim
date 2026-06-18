@@ -89,7 +89,7 @@ class NotificationService {
       id,
       title,
       body,
-      tz.TZDateTime.from(scheduledDate, tz.local),
+      _scheduledLocalDateTime(scheduledDate),
       _contactReminderNotificationDetails,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
@@ -110,6 +110,20 @@ class NotificationService {
       title,
       body,
       _contactReminderNotificationDetails,
+    );
+  }
+
+  tz.TZDateTime _scheduledLocalDateTime(DateTime date) {
+    return tz.TZDateTime(
+      tz.local,
+      date.year,
+      date.month,
+      date.day,
+      date.hour,
+      date.minute,
+      date.second,
+      date.millisecond,
+      date.microsecond,
     );
   }
 

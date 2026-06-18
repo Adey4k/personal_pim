@@ -103,7 +103,10 @@ void main() {
           firstArgs['body'],
           "Tomorrow is Alex's birthday. Alex turns 108.",
         );
-        expect(firstArgs['scheduledDateTime'], startsWith('2098-06-14T'));
+        expect(firstArgs['scheduledDateTime'], '2098-06-14T10:00:00');
+        final platformSpecifics =
+            firstArgs['platformSpecifics'] as Map<dynamic, dynamic>;
+        expect(platformSpecifics['scheduleMode'], 'inexactAllowWhileIdle');
         expect(
           firstArgs['matchDateTimeComponents'],
           DateTimeComponents.dateAndTime.index,
@@ -204,55 +207,72 @@ void main() {
       expect(args['body'], 'Tomorrow: Anniversary for Alex.');
     });
 
-    test(
-      'missed same-day yearly reminders wait for the next yearly slot',
-      () async {
-        notificationProvider = NotificationProvider(
-          now: () => DateTime(2098, 6, 14, 10, 30),
-        );
+    test('sync catches up a missed same-day yearly reminder once', () async {
+      notificationProvider = NotificationProvider(
+        now: () => DateTime(2098, 6, 14, 10, 30),
+      );
 
-        await notificationProvider.scheduleContactEventNotifications([
-          Contact(
-            id: 'contact-1',
-            fields: {
-              AppKeys.name: 'Alex',
-              AppKeys.birthday: {
-                'date': '14.06.1990',
-                'remindYearly': true,
-                'remindBefore': ['today'],
-              },
+      await notificationProvider.scheduleContactEventNotifications([
+        Contact(
+          id: 'contact-1',
+          fields: {
+            AppKeys.name: 'Alex',
+            AppKeys.birthday: {
+              'date': '14.06.1990',
+              'remindYearly': true,
+              'remindBefore': ['today'],
             },
-          ),
-        ]);
+          },
+        ),
+      ]);
 
-        final scheduleCalls = notificationCalls
-            .where((call) => call.method == 'zonedSchedule')
-            .toList();
+      final scheduleCalls = notificationCalls
+          .where((call) => call.method == 'zonedSchedule')
+          .toList();
 
-        expect(scheduleCalls, hasLength(1));
+      expect(scheduleCalls, hasLength(1));
+      final showCalls = notificationCalls
+          .where((call) => call.method == 'show')
+          .toList();
+      expect(showCalls, hasLength(1));
 
-        final yearlyArgs =
-            scheduleCalls.single.arguments as Map<dynamic, dynamic>;
+      final yearlyArgs =
+          scheduleCalls.single.arguments as Map<dynamic, dynamic>;
+      final catchUpArgs = showCalls.single.arguments as Map<dynamic, dynamic>;
 
-        expect(yearlyArgs['scheduledDateTime'], startsWith('2099-06-14T'));
-        expect(yearlyArgs['body'], "Today is Alex's birthday. Alex turns 109.");
-        expect(
-          yearlyArgs['matchDateTimeComponents'],
-          DateTimeComponents.dateAndTime.index,
-        );
-        expect(
-          notificationCalls.where((call) => call.method == 'show'),
-          isEmpty,
-        );
-      },
-    );
+      expect(yearlyArgs['scheduledDateTime'], startsWith('2099-06-14T'));
+      expect(yearlyArgs['body'], "Today is Alex's birthday. Alex turns 109.");
+      expect(catchUpArgs['title'], 'Birthday - Alex');
+      expect(catchUpArgs['body'], "Today is Alex's birthday. Alex turns 108.");
+      expect(
+        yearlyArgs['matchDateTimeComponents'],
+        DateTimeComponents.dateAndTime.index,
+      );
+
+      notificationCalls.clear();
+
+      await notificationProvider.scheduleContactEventNotifications([
+        Contact(
+          id: 'contact-1',
+          fields: {
+            AppKeys.name: 'Alex',
+            AppKeys.birthday: {
+              'date': '14.06.1990',
+              'remindYearly': true,
+              'remindBefore': ['today'],
+            },
+          },
+        ),
+      ]);
+
+      expect(notificationCalls.where((call) => call.method == 'show'), isEmpty);
+    });
 
     test(
       'changing reminder time catches up a missed same-day reminder once',
       () async {
-        notificationProvider = NotificationProvider(
-          now: () => DateTime(2098, 6, 14, 10, 30),
-        );
+        var now = DateTime(2098, 6, 14, 9);
+        notificationProvider = NotificationProvider(now: () => now);
         final contacts = [
           Contact(
             id: 'contact-1',
@@ -267,8 +287,12 @@ void main() {
           ),
         ];
 
+        await notificationProvider.setReminderTime(
+          const TimeOfDay(hour: 11, minute: 0),
+        );
         await notificationProvider.scheduleContactEventNotifications(contacts);
         notificationCalls.clear();
+        now = DateTime(2098, 6, 14, 10, 30);
 
         await notificationProvider.setReminderTime(
           const TimeOfDay(hour: 10, minute: 0),
@@ -301,6 +325,50 @@ void main() {
           notificationCalls.where((call) => call.method == 'show'),
           isEmpty,
         );
+      },
+    );
+
+    test(
+      'already scheduled same-day reminders are not caught up again',
+      () async {
+        var now = DateTime(2098, 6, 14, 9);
+        notificationProvider = NotificationProvider(now: () => now);
+        final contacts = [
+          Contact(
+            id: 'contact-1',
+            fields: {
+              AppKeys.name: 'Alex',
+              AppKeys.birthday: {
+                'date': '14.06.1990',
+                'remindYearly': true,
+                'remindBefore': ['today'],
+              },
+            },
+          ),
+        ];
+
+        await notificationProvider.scheduleContactEventNotifications(contacts);
+
+        expect(
+          notificationCalls.where((call) => call.method == 'show'),
+          isEmpty,
+        );
+        notificationCalls.clear();
+        now = DateTime(2098, 6, 14, 10, 30);
+
+        await notificationProvider.scheduleContactEventNotifications(contacts);
+
+        expect(
+          notificationCalls.where((call) => call.method == 'show'),
+          isEmpty,
+        );
+        final scheduleCalls = notificationCalls
+            .where((call) => call.method == 'zonedSchedule')
+            .toList();
+        expect(scheduleCalls, hasLength(1));
+        final scheduleArgs =
+            scheduleCalls.single.arguments as Map<dynamic, dynamic>;
+        expect(scheduleArgs['scheduledDateTime'], startsWith('2099-06-14T'));
       },
     );
 
