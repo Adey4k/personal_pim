@@ -257,9 +257,22 @@ class _ContactPageState extends State<ContactPage> {
     final l10n = AppLocalizations.of(context)!;
     try {
       final geminiService = Provider.of<GeminiService>(context, listen: false);
+      final existingFields =
+          <String>{
+              AppKeys.phone,
+              AppKeys.email,
+              AppKeys.birthday,
+              ...widget.existingFields,
+              ..._fields.map((field) => field.keyController.text.trim()),
+            }
+            ..remove('')
+            ..remove(AppKeys.name)
+            ..remove(AppKeys.groups);
+
       final aiContact = await geminiService.processInput(
         text,
         existingGroups: _availableGroups.toList(),
+        existingFields: existingFields.toList(),
       );
 
       bool hasUsefulData = false;

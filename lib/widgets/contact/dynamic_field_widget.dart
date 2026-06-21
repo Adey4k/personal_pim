@@ -46,67 +46,81 @@ class DynamicFieldWidget extends StatelessWidget {
           : Colors.transparent,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
-            Expanded(
-              flex: 2,
-              child: InkWell(
-                onTap: onTapField,
-                borderRadius: BorderRadius.circular(4),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2.0),
-                        child: Icon(
-                          field.keyController.text == AppKeys.groups
-                              ? Icons.label_outline
-                              : getIconForType(field.type),
-                          size: 16,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          field.keyController.text.isEmpty
-                              ? l10n.newField
-                              : AppKeys.getLocalizedLabel(
-                                  field.keyController.text,
-                                  l10n,
-                                ),
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: InkWell(
+                    onTap: onTapField,
+                    borderRadius: BorderRadius.circular(4),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2.0),
+                            child: Icon(
+                              field.keyController.text == AppKeys.groups
+                                  ? Icons.label_outline
+                                  : getIconForType(field.type),
+                              size: 16,
+                              color: Colors.grey,
+                            ),
                           ),
-                          maxLines: 4,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              field.keyController.text.isEmpty
+                                  ? l10n.newField
+                                  : AppKeys.getLocalizedLabel(
+                                      field.keyController.text,
+                                      l10n,
+                                    ),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 4,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 3,
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      right: field.isAiGenerated ? 36.0 : 0.0,
+                    ),
+                    child: _buildInput(context, l10n),
+                  ),
+                ),
+              ],
+            ),
+            if (field.isAiGenerated)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: SizedBox.square(
+                  dimension: 32,
+                  child: IconButton(
+                    tooltip: l10n.cancel,
+                    icon: const Icon(Icons.close, size: 16),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: onRevertAiChange,
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(flex: 3, child: _buildInput(context, l10n)),
-            if (field.isAiGenerated) ...[
-              const SizedBox(width: 4),
-              SizedBox.square(
-                dimension: 32,
-                child: IconButton(
-                  tooltip: l10n.cancel,
-                  icon: const Icon(Icons.close, size: 16),
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
-                  onPressed: onRevertAiChange,
-                ),
-              ),
-            ],
           ],
         ),
       ),

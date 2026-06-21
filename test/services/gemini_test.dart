@@ -119,29 +119,44 @@ void main() {
       );
     });
 
-    test('processInput prompt contains existing groups for matching', () async {
-      final mockResponse = MockGeminiResponse();
-      when(
-        mockResponse.text,
-      ).thenReturn('{"name": "Test", "groups": [], "fields": []}');
-      when(
-        mockClient.generateContent(any),
-      ).thenAnswer((_) async => mockResponse);
+    test(
+      'processInput prompt strictly prefers existing fields and groups',
+      () async {
+        final mockResponse = MockGeminiResponse();
+        when(
+          mockResponse.text,
+        ).thenReturn('{"name": "Test", "groups": [], "fields": []}');
+        when(
+          mockClient.generateContent(any),
+        ).thenAnswer((_) async => mockResponse);
 
-      await geminiService.processInput(
-        'test',
-        existingGroups: ['Work', 'Family'],
-      );
+        await geminiService.processInput(
+          'test',
+          existingGroups: ['Work', 'Family'],
+          existingFields: ['Telegram', 'work email'],
+        );
 
-      final captured = verify(mockClient.generateContent(captureAny)).captured;
-      final content = captured.first as Iterable<Content>;
-      final promptText = content.first.parts.first as TextPart;
+        final captured = verify(
+          mockClient.generateContent(captureAny),
+        ).captured;
+        final content = captured.first as Iterable<Content>;
+        final promptText = content.first.parts.first as TextPart;
 
-      expect(
-        promptText.text,
-        contains('groups" MUST prefer existing: Work, Family'),
-      );
-    });
+        expect(
+          promptText.text,
+          contains('EXISTING FIELDS: Telegram, work email'),
+        );
+        expect(
+          promptText.text,
+          contains('USE THE EXISTING FIELD KEY EXACTLY AS WRITTEN'),
+        );
+        expect(promptText.text, contains('EXISTING GROUPS: Work, Family'));
+        expect(
+          promptText.text,
+          contains('USE THE EXISTING GROUP EXACTLY AS WRITTEN'),
+        );
+      },
+    );
 
     test('processInput throws exception on empty AI response', () async {
       final mockResponse = MockGeminiResponse();

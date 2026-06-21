@@ -77,8 +77,8 @@ class FirestoreAiRequestQuotaStore implements AiRequestQuotaStore {
 
     final dateKey = _formatQuotaDate(date);
     final docRef = _firestore
-        .collection('ai_usage')
-        .doc(user.uid)
+        .collection(user.uid)
+        .doc('--ai-usage--')
         .collection('daily')
         .doc(dateKey);
 
@@ -128,12 +128,19 @@ class GeminiService {
   Future<AiParsedContact> processInput(
     String text, {
     List<String> existingGroups = const [],
+    List<String> existingFields = const [],
   }) async {
     final now = _clock();
     await _quotaStore.reserveRequest(date: now, dailyLimit: dailyRequestLimit);
 
     final todayStr =
         "${now.day.toString().padLeft(2, '0')}.${now.month.toString().padLeft(2, '0')}.${now.year}";
+    final existingGroupsText = existingGroups.isEmpty
+        ? '(none)'
+        : existingGroups.join(', ');
+    final existingFieldsText = existingFields.isEmpty
+        ? '(none)'
+        : existingFields.join(', ');
 
     final prompt =
         '''
@@ -153,14 +160,15 @@ class GeminiService {
       1. NO REASONING. NO COMMENTS. NO ANALYSIS.
       2. "name" MUST BE ONLY A HUMAN NAME. EMPTY IF NOT FOUND.
       3. Use technical keys for "fields": "phone", "email", "birthday".
-      4. "groups" MUST prefer existing: ${existingGroups.join(', ')}. If user says a synonym or variation of an existing group, USE THE EXISTING ONE.
-      5. PHONE NUMBERS: Keep the '+' if present. Remove ALL spaces, dashes, parentheses. ONLY digits allowed (e.g., "+380671234567" or "0671234567").
-      6. DATES: Use "DD.MM.YYYY" format. 
+      4. EXISTING FIELDS: $existingFieldsText. BEFORE creating any new field, compare the meaning with existing fields and technical keys. If the information is a synonym, translation, abbreviation, spelling/case variation, singular/plural form, or closely related label, USE THE EXISTING FIELD KEY EXACTLY AS WRITTEN. Create a new custom field ONLY when no existing or technical field fits at all.
+      5. EXISTING GROUPS: $existingGroupsText. BEFORE creating any new group, compare the meaning with existing groups. If the group is a synonym, translation, abbreviation, spelling/case/spacing variation, or closely related label, USE THE EXISTING GROUP EXACTLY AS WRITTEN. Create a new group ONLY when no existing group fits at all.
+      6. PHONE NUMBERS: Keep the '+' if present. Remove ALL spaces, dashes, parentheses. ONLY digits allowed (e.g., "+380671234567" or "0671234567").
+      7. DATES: Use "DD.MM.YYYY" format.
          - Use the CURRENT YEAR (${now.year}) if the year is missing in text.
          - For "birthday", if year is unknown, use "0000" as year (e.g., "01.01.0000").
-      7. BOOLEANS: Use "true" or "false" string values.
-      8. CUSTOM FIELDS: If you find useful info that doesn't fit technical keys (e.g. Telegram, Address, Job, Has Kids), CREATE a new field with a descriptive key in the language of the input.
-      9. DATA TYPES: Identify the most logical type for each field. Booleans for yes/no facts, dates for anniversaries, numbers for numeric IDs or phones.
+      8. BOOLEANS: Use "true" or "false" string values.
+      9. CUSTOM FIELDS: If useful info does not fit technical keys or any existing field (e.g. Telegram, Address, Job, Has Kids), create one descriptive field key in the language of the input.
+      10. DATA TYPES: Identify the most logical type for each field. Booleans for yes/no facts, dates for anniversaries, numbers for numeric IDs or phones.
 
       EXAMPLE:
       Current Date: 13.06.2024
