@@ -346,6 +346,10 @@ class AppLocalizationsUk extends AppLocalizations {
   String get aiReturnedEmptyResponse => 'ІІ повернув порожню відповідь';
 
   @override
+  String get aiDailyLimitReached =>
+      'Досягнуто денного ліміту ШІ. Можна зробити 10 запитів до ШІ на день.';
+
+  @override
   String get contactListEmpty => 'Список контактів порожній';
 
   @override

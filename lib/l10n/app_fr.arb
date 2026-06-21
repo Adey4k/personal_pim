@@ -104,6 +104,7 @@
   "geminiApiKeyNotFound": "GEMINI_API_KEY non trouvé",
   "serverOverloaded": "Serveur surchargé. Réessayez plus tard.",
   "aiReturnedEmptyResponse": "L'IA a renvoyé une réponse vide",
+  "aiDailyLimitReached": "Limite quotidienne d'IA atteinte. Vous pouvez faire 10 requêtes IA par jour.",
   "contactListEmpty": "La liste de contacts est vide",
   "selectAtLeastOneColumn": "Sélectionnez au moins une colonne dans les paramètres",
   "noResultsFound": "Aucun résultat trouvé pour votre requête",

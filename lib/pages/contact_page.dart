@@ -25,6 +25,8 @@ class DynamicField {
   final TextEditingController valueController;
   FieldType type;
   bool isAiGenerated;
+  String? aiPreviousValue;
+  bool isAiCreated;
   bool remindYearly;
   List<String> remindBefore;
 
@@ -34,10 +36,27 @@ class DynamicField {
     required String value,
     this.type = FieldType.text,
     this.isAiGenerated = false,
+    this.aiPreviousValue,
+    this.isAiCreated = false,
     this.remindYearly = false,
     this.remindBefore = const ['today'],
   }) : keyController = TextEditingController(text: key),
        valueController = TextEditingController(text: value);
+
+  void markAiGenerated({
+    required String previousValue,
+    bool isCreated = false,
+  }) {
+    aiPreviousValue ??= previousValue;
+    isAiGenerated = true;
+    isAiCreated = isAiCreated || isCreated;
+  }
+
+  void clearAiGenerated() {
+    isAiGenerated = false;
+    aiPreviousValue = null;
+    isAiCreated = false;
+  }
 
   void dispose() {
     keyController.dispose();
@@ -75,6 +94,7 @@ class _ContactPageState extends State<ContactPage> {
   final Set<String> _deletedFields = {};
   bool _showEmptyFields = true;
   bool _isNameAiGenerated = false;
+  String? _aiPreviousName;
   bool _isSaving = false;
 
   Set<String> _availableGroups = {};
@@ -203,6 +223,36 @@ class _ContactPageState extends State<ContactPage> {
     }
   }
 
+  void _clearNameAiGenerated() {
+    _isNameAiGenerated = false;
+    _aiPreviousName = null;
+  }
+
+  void _revertAiNameChange() {
+    setState(() {
+      _nameController.text = _aiPreviousName ?? '';
+      _clearNameAiGenerated();
+    });
+  }
+
+  void _revertAiFieldChange(DynamicField field) {
+    setState(() {
+      if (field.isAiCreated) {
+        field.dispose();
+        _fields.remove(field);
+        return;
+      }
+
+      final previousValue = field.aiPreviousValue ?? '';
+      field.valueController.text = previousValue;
+      if (field.keyController.text == AppKeys.groups) {
+        _selectedGroups = Contact.parseGroups(previousValue);
+        _availableGroups.addAll(_selectedGroups);
+      }
+      field.clearAiGenerated();
+    });
+  }
+
   Future<void> _processAiInput(String text) async {
     final l10n = AppLocalizations.of(context)!;
     try {
@@ -216,12 +266,20 @@ class _ContactPageState extends State<ContactPage> {
 
       setState(() {
         if (aiContact.name != null && aiContact.name!.isNotEmpty) {
+          _aiPreviousName ??= _nameController.text;
           _nameController.text = aiContact.name!;
           _isNameAiGenerated = true;
           hasUsefulData = true;
         }
 
         if (aiContact.groups.isNotEmpty) {
+          final gIdx = _fields.indexWhere(
+            (f) => f.keyController.text == AppKeys.groups,
+          );
+          final previousGroupsValue = gIdx == -1
+              ? ''
+              : _fields[gIdx].valueController.text;
+
           for (String g in aiContact.groups) {
             // Case-insensitive check for existing group
             String? existingMatch;
@@ -243,12 +301,9 @@ class _ContactPageState extends State<ContactPage> {
               _selectedGroups.add(groupToAdd);
             }
           }
-          final gIdx = _fields.indexWhere(
-            (f) => f.keyController.text == AppKeys.groups,
-          );
           if (gIdx != -1) {
             _fields[gIdx].valueController.text = _selectedGroups.join(', ');
-            _fields[gIdx].isAiGenerated = true;
+            _fields[gIdx].markAiGenerated(previousValue: previousGroupsValue);
             hasUsefulData = true;
           }
         }
@@ -260,8 +315,10 @@ class _ContactPageState extends State<ContactPage> {
                   ex.keyController.text.toLowerCase() == f.key.toLowerCase(),
             );
             if (idx != -1) {
-              _fields[idx].valueController.text = f.value;
-              _fields[idx].isAiGenerated = true;
+              final field = _fields[idx];
+              final previousValue = field.valueController.text;
+              field.valueController.text = f.value;
+              field.markAiGenerated(previousValue: previousValue);
               hasUsefulData = true;
             } else if (f.value.isNotEmpty) {
               _fields.add(
@@ -271,6 +328,8 @@ class _ContactPageState extends State<ContactPage> {
                   value: f.value,
                   type: f.type,
                   isAiGenerated: true,
+                  aiPreviousValue: '',
+                  isAiCreated: true,
                 ),
               );
               hasUsefulData = true;
@@ -290,6 +349,15 @@ class _ContactPageState extends State<ContactPage> {
           ),
         );
       }
+    } on AiDailyLimitExceededException {
+      if (!mounted) return;
+      showCurrentSnackBar(
+        context,
+        SnackBar(
+          content: Text(l10n.aiDailyLimitReached),
+          backgroundColor: Colors.orange,
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       showCurrentSnackBar(
@@ -524,7 +592,10 @@ class _ContactPageState extends State<ContactPage> {
               leading: const Icon(Icons.text_fields),
               title: Text(l10n.textType),
               onTap: () {
-                setState(() => _fields[index].type = FieldType.text);
+                setState(() {
+                  _fields[index].type = FieldType.text;
+                  _fields[index].clearAiGenerated();
+                });
                 Navigator.pop(context);
               },
             ),
@@ -532,7 +603,10 @@ class _ContactPageState extends State<ContactPage> {
               leading: const Icon(Icons.numbers),
               title: Text(l10n.numberType),
               onTap: () {
-                setState(() => _fields[index].type = FieldType.number);
+                setState(() {
+                  _fields[index].type = FieldType.number;
+                  _fields[index].clearAiGenerated();
+                });
                 Navigator.pop(context);
               },
             ),
@@ -540,7 +614,10 @@ class _ContactPageState extends State<ContactPage> {
               leading: const Icon(Icons.calendar_today),
               title: Text(l10n.dateType),
               onTap: () {
-                setState(() => _fields[index].type = FieldType.date);
+                setState(() {
+                  _fields[index].type = FieldType.date;
+                  _fields[index].clearAiGenerated();
+                });
                 Navigator.pop(context);
               },
             ),
@@ -553,6 +630,7 @@ class _ContactPageState extends State<ContactPage> {
                   if (_fields[index].valueController.text.isEmpty) {
                     _fields[index].valueController.text = "false";
                   }
+                  _fields[index].clearAiGenerated();
                 });
                 Navigator.pop(context);
               },
@@ -811,7 +889,7 @@ class _ContactPageState extends State<ContactPage> {
               setState(() {
                 _fields[index].keyController.text = renameController.text
                     .trim();
-                _fields[index].isAiGenerated = false;
+                _fields[index].clearAiGenerated();
               });
               Navigator.pop(context);
             },
@@ -941,7 +1019,7 @@ class _ContactPageState extends State<ContactPage> {
                     _availableGroups.remove(oldGroup);
                     _selectedGroups.remove(oldGroup);
                     field.valueController.text = _selectedGroups.join(', ');
-                    field.isAiGenerated = false;
+                    field.clearAiGenerated();
                   });
                   setBottomSheetState(() {});
                   showCurrentSnackBar(
@@ -990,7 +1068,7 @@ class _ContactPageState extends State<ContactPage> {
                 int iS = _selectedGroups.indexOf(oldGroup);
                 if (iS != -1) _selectedGroups[iS] = newName;
                 field.valueController.text = _selectedGroups.join(', ');
-                field.isAiGenerated = false;
+                field.clearAiGenerated();
               });
               setBottomSheetState(() {});
               Navigator.pop(ctx);
@@ -1048,7 +1126,7 @@ class _ContactPageState extends State<ContactPage> {
               _selectedGroups.add(newGroup);
             }
             field.valueController.text = _selectedGroups.join(', ');
-            field.isAiGenerated = false;
+            field.clearAiGenerated();
           });
           setModalState(() {});
           _groupInputController.clear();
@@ -1068,7 +1146,7 @@ class _ContactPageState extends State<ContactPage> {
               _selectedGroups.remove(group);
             }
             field.valueController.text = _selectedGroups.join(', ');
-            field.isAiGenerated = false;
+            field.clearAiGenerated();
           });
           setModalState(() {});
         },
@@ -1130,27 +1208,48 @@ class _ContactPageState extends State<ContactPage> {
                     ).colorScheme.tertiaryContainer.withValues(alpha: 0.3)
                   : Colors.transparent,
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: TextField(
-                controller: _nameController,
-                keyboardType: TextInputType.multiline,
-                minLines: 1,
-                maxLines: 4,
-                onChanged: (_) {
-                  if (_isNameAiGenerated) {
-                    setState(() => _isNameAiGenerated = false);
-                  }
-                },
-                style: const TextStyle(
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                ),
-                maxLength: 64,
-                decoration: InputDecoration(
-                  hintText: l10n.name,
-                  border: InputBorder.none,
-                  hintStyle: const TextStyle(color: Colors.grey),
-                  counterText: "",
-                ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _nameController,
+                      keyboardType: TextInputType.multiline,
+                      minLines: 1,
+                      maxLines: 4,
+                      onChanged: (_) {
+                        if (_isNameAiGenerated) {
+                          setState(_clearNameAiGenerated);
+                        }
+                      },
+                      style: const TextStyle(
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLength: 64,
+                      decoration: InputDecoration(
+                        hintText: l10n.name,
+                        border: InputBorder.none,
+                        hintStyle: const TextStyle(color: Colors.grey),
+                        counterText: "",
+                      ),
+                    ),
+                  ),
+                  if (_isNameAiGenerated)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12.0),
+                      child: SizedBox.square(
+                        dimension: 32,
+                        child: IconButton(
+                          tooltip: l10n.cancel,
+                          icon: const Icon(Icons.close, size: 16),
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          onPressed: _revertAiNameChange,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             const Divider(),
@@ -1172,14 +1271,16 @@ class _ContactPageState extends State<ContactPage> {
                     onDatePicked: (picked) => setState(() {
                       field.valueController.text =
                           "${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}";
-                      field.isAiGenerated = false;
+                      field.clearAiGenerated();
                     }),
                     onBooleanChanged: (val) => setState(() {
                       field.valueController.text = val.toString();
-                      field.isAiGenerated = false;
+                      field.clearAiGenerated();
                     }),
-                    onRemindYearlyChanged: (val) =>
-                        setState(() => field.remindYearly = val),
+                    onRemindYearlyChanged: (val) => setState(() {
+                      field.remindYearly = val;
+                      field.clearAiGenerated();
+                    }),
                     onWithoutYearChanged: (val) => setState(() {
                       if (val) {
                         String current = field.valueController.text;
@@ -1194,10 +1295,18 @@ class _ContactPageState extends State<ContactPage> {
                               "${current.substring(0, 6)}${DateTime.now().year}";
                         }
                       }
-                      field.isAiGenerated = false;
+                      field.clearAiGenerated();
                     }),
-                    onRemindBeforeChanged: (val) =>
-                        setState(() => field.remindBefore = val),
+                    onRemindBeforeChanged: (val) => setState(() {
+                      field.remindBefore = val;
+                      field.clearAiGenerated();
+                    }),
+                    onRevertAiChange: () => _revertAiFieldChange(field),
+                    onValueChanged: () {
+                      if (field.isAiGenerated) {
+                        setState(field.clearAiGenerated);
+                      }
+                    },
                   );
                 }).toList(),
               ),

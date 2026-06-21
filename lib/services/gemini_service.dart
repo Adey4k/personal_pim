@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../utils/env.dart';
 import '../models/ai_parsed_contact.dart';
@@ -23,11 +25,13 @@ class GoogleGeminiClient implements GeminiClient {
   final GenerativeModel _model;
 
   GoogleGeminiClient()
-      : _model = GenerativeModel(
-          model: 'gemini-3.1-flash-lite',
-          apiKey: Env.geminiApiKey,
-          generationConfig: GenerationConfig(responseMimeType: 'application/json'),
-        );
+    : _model = GenerativeModel(
+        model: 'gemini-3.1-flash-lite',
+        apiKey: Env.geminiApiKey,
+        generationConfig: GenerationConfig(
+          responseMimeType: 'application/json',
+        ),
+      );
 
   @override
   Future<GeminiResponse> generateContent(Iterable<Content> content) async {
@@ -36,16 +40,103 @@ class GoogleGeminiClient implements GeminiClient {
   }
 }
 
+class AiDailyLimitExceededException implements Exception {
+  final int limit;
+  final String dateKey;
+
+  AiDailyLimitExceededException({required this.limit, required this.dateKey});
+
+  @override
+  String toString() => 'AI daily limit exceeded';
+}
+
+abstract class AiRequestQuotaStore {
+  Future<void> reserveRequest({
+    required DateTime date,
+    required int dailyLimit,
+  });
+}
+
+class FirestoreAiRequestQuotaStore implements AiRequestQuotaStore {
+  final FirebaseAuth _auth;
+  final FirebaseFirestore _firestore;
+
+  FirestoreAiRequestQuotaStore({
+    FirebaseAuth? auth,
+    FirebaseFirestore? firestore,
+  }) : _auth = auth ?? FirebaseAuth.instance,
+       _firestore = firestore ?? FirebaseFirestore.instance;
+
+  @override
+  Future<void> reserveRequest({
+    required DateTime date,
+    required int dailyLimit,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception('userNotAuthenticated');
+
+    final dateKey = _formatQuotaDate(date);
+    final docRef = _firestore
+        .collection('ai_usage')
+        .doc(user.uid)
+        .collection('daily')
+        .doc(dateKey);
+
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(docRef);
+      final data = snapshot.data();
+      final currentCount = (data?['count'] as num?)?.toInt() ?? 0;
+
+      if (currentCount >= dailyLimit) {
+        throw AiDailyLimitExceededException(
+          limit: dailyLimit,
+          dateKey: dateKey,
+        );
+      }
+
+      transaction.set(docRef, {
+        'count': currentCount + 1,
+        'date': dateKey,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    });
+  }
+
+  static String _formatQuotaDate(DateTime date) {
+    final year = date.year.toString().padLeft(4, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
+  }
+}
+
 class GeminiService {
+  static const int dailyRequestLimit = 10;
+
   final GeminiClient _client;
+  final AiRequestQuotaStore _quotaStore;
+  final DateTime Function() _clock;
 
-  GeminiService({GeminiClient? client}) : _client = client ?? GoogleGeminiClient();
+  GeminiService({
+    GeminiClient? client,
+    AiRequestQuotaStore? quotaStore,
+    DateTime Function()? clock,
+  }) : _client = client ?? GoogleGeminiClient(),
+       _quotaStore = quotaStore ?? FirestoreAiRequestQuotaStore(),
+       _clock = clock ?? DateTime.now;
 
-  Future<AiParsedContact> processInput(String text, {List<String> existingGroups = const []}) async {
-    final now = DateTime.now();
-    final todayStr = "${now.day.toString().padLeft(2, '0')}.${now.month.toString().padLeft(2, '0')}.${now.year}";
-    
-    final prompt = '''
+  Future<AiParsedContact> processInput(
+    String text, {
+    List<String> existingGroups = const [],
+  }) async {
+    final now = _clock();
+    await _quotaStore.reserveRequest(date: now, dailyLimit: dailyRequestLimit);
+
+    final todayStr =
+        "${now.day.toString().padLeft(2, '0')}.${now.month.toString().padLeft(2, '0')}.${now.year}";
+
+    final prompt =
+        '''
       Extract contact information from text and return JSON.
       CURRENT DATE: $todayStr
       
@@ -101,7 +192,8 @@ class GeminiService {
       throw Exception("Invalid AI response format");
     }
 
-    final Map<String, dynamic> rawJson = jsonDecode(match) as Map<String, dynamic>;
+    final Map<String, dynamic> rawJson =
+        jsonDecode(match) as Map<String, dynamic>;
     return AiParsedContact.fromJson(rawJson);
   }
 }

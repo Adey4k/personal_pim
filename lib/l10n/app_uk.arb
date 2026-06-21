@@ -120,6 +120,7 @@
   "geminiApiKeyNotFound": "GEMINI_API_KEY не знайдено",
   "serverOverloaded": "Сервер перевантажений. Спробуйте пізніше.",
   "aiReturnedEmptyResponse": "ІІ повернув порожню відповідь",
+  "aiDailyLimitReached": "Досягнуто денного ліміту ШІ. Можна зробити 10 запитів до ШІ на день.",
   "contactListEmpty": "Список контактів порожній",
   "selectAtLeastOneColumn": "Виберіть хоча б одну колонку в налаштуваннях",
   "noResultsFound": "За вашим запитом нічого не знайдено",

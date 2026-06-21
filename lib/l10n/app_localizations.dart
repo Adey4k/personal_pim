@@ -748,6 +748,12 @@ abstract class AppLocalizations {
   /// **'AI returned empty response'**
   String get aiReturnedEmptyResponse;
 
+  /// No description provided for @aiDailyLimitReached.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily AI limit reached. You can make 10 AI requests per day.'**
+  String get aiDailyLimitReached;
+
   /// No description provided for @contactListEmpty.
   ///
   /// In en, this message translates to:

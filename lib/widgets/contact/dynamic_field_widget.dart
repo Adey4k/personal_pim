@@ -15,6 +15,8 @@ class DynamicFieldWidget extends StatelessWidget {
   final Function(bool) onRemindYearlyChanged;
   final Function(bool) onWithoutYearChanged;
   final Function(List<String>) onRemindBeforeChanged;
+  final VoidCallback onRevertAiChange;
+  final VoidCallback onValueChanged;
 
   const DynamicFieldWidget({
     super.key,
@@ -28,6 +30,8 @@ class DynamicFieldWidget extends StatelessWidget {
     required this.onRemindYearlyChanged,
     required this.onWithoutYearChanged,
     required this.onRemindBeforeChanged,
+    required this.onRevertAiChange,
+    required this.onValueChanged,
   });
 
   @override
@@ -90,6 +94,19 @@ class DynamicFieldWidget extends StatelessWidget {
             ),
             const SizedBox(width: 16),
             Expanded(flex: 3, child: _buildInput(context, l10n)),
+            if (field.isAiGenerated) ...[
+              const SizedBox(width: 4),
+              SizedBox.square(
+                dimension: 32,
+                child: IconButton(
+                  tooltip: l10n.cancel,
+                  icon: const Icon(Icons.close, size: 16),
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                  onPressed: onRevertAiChange,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -147,6 +164,7 @@ class DynamicFieldWidget extends StatelessWidget {
           controller: field.valueController,
           keyboardType: TextInputType.phone,
           maxLength: 13,
+          onChanged: (_) => onValueChanged(),
           decoration: const InputDecoration(
             hintText: '0',
             hintStyle: TextStyle(color: Colors.grey),
@@ -286,6 +304,7 @@ class DynamicFieldWidget extends StatelessWidget {
           minLines: 1,
           maxLines: 4,
           maxLength: 64,
+          onChanged: (_) => onValueChanged(),
           decoration: InputDecoration(
             hintText: l10n.textType,
             hintStyle: const TextStyle(color: Colors.grey),

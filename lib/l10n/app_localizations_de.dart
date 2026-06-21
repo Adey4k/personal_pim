@@ -349,6 +349,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get aiReturnedEmptyResponse => 'KI gab eine leere Antwort zurück';
 
   @override
+  String get aiDailyLimitReached =>
+      'Tageslimit für KI erreicht. Sie können 10 KI-Anfragen pro Tag stellen.';
+
+  @override
   String get contactListEmpty => 'Kontaktliste ist leer';
 
   @override

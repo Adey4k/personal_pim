@@ -104,6 +104,7 @@
   "geminiApiKeyNotFound": "Nie znaleziono GEMINI_API_KEY",
   "serverOverloaded": "Serwer przeciążony. Spróbuj ponownie później.",
   "aiReturnedEmptyResponse": "AI zwróciło pustą odpowiedź",
+  "aiDailyLimitReached": "Osiągnięto dzienny limit AI. Możesz wykonać 10 zapytań AI dziennie.",
   "contactListEmpty": "Lista kontaktów jest pusta",
   "selectAtLeastOneColumn": "Wybierz co najmniej jedną kolumnę w ustawieniach",
   "noResultsFound": "Nie znaleziono wyników dla Twojego zapytania",

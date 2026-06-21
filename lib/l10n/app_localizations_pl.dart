@@ -347,6 +347,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get aiReturnedEmptyResponse => 'AI zwróciło pustą odpowiedź';
 
   @override
+  String get aiDailyLimitReached =>
+      'Osiągnięto dzienny limit AI. Możesz wykonać 10 zapytań AI dziennie.';
+
+  @override
   String get contactListEmpty => 'Lista kontaktów jest pusta';
 
   @override

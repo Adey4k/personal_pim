@@ -65,7 +65,14 @@ class AuthService {
     }
   }
 
-  User? get currentUser => _auth.currentUser;
+  User? get currentUser {
+    try {
+      return _auth.currentUser;
+    } on FirebaseException catch (e) {
+      if (e.code == 'no-app') return null;
+      rethrow;
+    }
+  }
 
   Future<UserCredential?> signInWithGoogle({String? languageCode}) async {
     try {
@@ -91,7 +98,9 @@ class AuthService {
       return userCredential;
     } catch (e) {
       debugPrint("Помилка входу через Google: $e");
-      if (e is Exception && e.toString().contains('googleClientIdNotFound')) rethrow;
+      if (e is Exception && e.toString().contains('googleClientIdNotFound')) {
+        rethrow;
+      }
       throw Exception("authGoogleError");
     }
   }
@@ -104,9 +113,9 @@ class AuthService {
       );
 
       if (userCredential.user != null) {
-        // Since we don't have languageCode here easily, 
+        // Since we don't have languageCode here easily,
         // initializeUserDatabase handles existing users by checking if contacts exist.
-        await _dbService.initializeUserDatabase('en'); 
+        await _dbService.initializeUserDatabase('en');
       }
 
       return userCredential;

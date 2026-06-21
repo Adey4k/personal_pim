@@ -349,6 +349,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get aiReturnedEmptyResponse => 'L\'IA a renvoyé une réponse vide';
 
   @override
+  String get aiDailyLimitReached =>
+      'Limite quotidienne d\'IA atteinte. Vous pouvez faire 10 requêtes IA par jour.';
+
+  @override
   String get contactListEmpty => 'La liste de contacts est vide';
 
   @override

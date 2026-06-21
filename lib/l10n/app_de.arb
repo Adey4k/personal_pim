@@ -104,6 +104,7 @@
   "geminiApiKeyNotFound": "GEMINI_API_KEY nicht gefunden",
   "serverOverloaded": "Server überlastet. Versuchen Sie es später erneut.",
   "aiReturnedEmptyResponse": "KI gab eine leere Antwort zurück",
+  "aiDailyLimitReached": "Tageslimit für KI erreicht. Sie können 10 KI-Anfragen pro Tag stellen.",
   "contactListEmpty": "Kontaktliste ist leer",
   "selectAtLeastOneColumn": "Wählen Sie mindestens eine Spalte in den Einstellungen aus",
   "noResultsFound": "Keine Ergebnisse für Ihre Anfrage gefunden",
